@@ -78,22 +78,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .product-card__image-wrap { aspect-ratio: .79; position: relative; overflow: hidden; background: #343831; }
 .product-card__image { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform .45s cubic-bezier(.2,.7,.2,1); }
 .product-card:hover .product-card__image { transform: scale(1.045); }
-.product-print { position: absolute; z-index: 1; top: 43%; left: 50%; width: 21%; aspect-ratio: .72; padding: 5px 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transform: translate(-50%, -50%); overflow: hidden; border: 1px solid currentColor; background: #171a16; color: var(--lime); text-align: center; box-shadow: 0 1px 8px rgba(0,0,0,.2); transition: width .2s ease; }
-.product-print::before { position: absolute; inset: 8%; border: 1px solid currentColor; border-radius: 50%; content: ""; opacity: .48; }
-.product-print small, .product-print strong, .product-print i { position: relative; max-width: 100%; }
-.product-print small { font-size: clamp(3px, .43vw, 6px); font-weight: 800; letter-spacing: .09em; line-height: 1.15; }
-.product-print strong { font-family: var(--font-display); font-size: clamp(9px, 1.45vw, 23px); font-weight: 400; line-height: .88; }
-.product-print i { color: var(--paper); font-size: clamp(2px, .31vw, 4px); font-style: normal; letter-spacing: .06em; line-height: 1.2; }
-.product-print--brick { background: #842f24; color: #f2c37d; }
-.product-print--gold { background: #d4ae61; color: #312a21; }
-.product-print--gold i { color: #312a21; }
-.product-print--sage { background: #657357; color: #e8d6ad; }
-.product-print--ocean { background: #27475a; color: #d9d19a; }
-.product-print--ink { background: #191a19; color: #e5e0d3; }
 .product-card__label { position: absolute; top: 12px; left: 12px; padding: 7px 9px; color: var(--ink); background: var(--lime); font-size: 8px; font-weight: 800; letter-spacing: .1em; }
 .product-card__featured { position: absolute; top: 12px; right: 12px; padding: 7px 8px; background: var(--paper); color: var(--ink); font-size: 7px; font-weight: 800; letter-spacing: .1em; }
 .product-card__stock { position: absolute; right: 10px; bottom: 32px; padding: 5px 7px; background: rgba(21,23,20,.82); color: var(--lime); font-size: 7px; font-weight: 800; letter-spacing: .1em; }
-.product-card__index { position: absolute; right: 13px; bottom: 12px; color: white; font-size: 9px; letter-spacing: .14em; text-shadow: 0 1px 8px #000; }
 .product-card__meta { padding: 14px 1px 0; display: flex; align-items: start; justify-content: space-between; gap: 10px; }
 .product-card__name { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .product-card__detail { margin: 7px 0 0; color: var(--muted); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
@@ -125,11 +112,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .product-stage { min-height: 620px; overflow: hidden; position: relative; display: grid; place-items: center; background: #b8c0a9; transition: background .2s ease; }
 .product-stage__image { position: absolute; inset: 0; background-position: center 38%; background-size: cover; transition: transform .35s ease; }
 .product-stage--2XL .product-stage__image { transform: scale(1.055); }
-.product-stage .product-print { z-index: 1; width: 22%; }
-.product-stage .product-print small { font-size: clamp(5px, .6vw, 8px); }
-.product-stage .product-print strong { font-size: clamp(18px, 3vw, 42px); }
-.product-stage .product-print i { font-size: clamp(3px, .42vw, 6px); }
-.product-stage--2XL .product-print { width: 18%; }
 .product-stage__size { position: absolute; bottom: 16px; left: 16px; padding: 8px 10px; background: var(--ink); color: var(--paper); font-size: 8px; font-weight: 800; letter-spacing: .12em; }
 .product-gallery { display: flex; gap: 8px; overflow-x: auto; padding-top: 9px; }
 .product-gallery__image { flex: 0 0 68px; width: 68px; height: 76px; border: 1px solid #4a4f45; background-color: #32372f; background-position: center; background-size: cover; cursor: pointer; }

@@ -27,7 +27,7 @@ export default function ProductCollection({ products }: { products: Product[] })
       </div>
       {filtered.length ? (
         <div className="product-grid">
-          {filtered.map((product, index) => <ProductCard key={product.slug} product={product} index={index} />)}
+          {filtered.map((product) => <ProductCard key={product.slug} product={product} />)}
         </div>
       ) : <p className="collection-empty">No pieces match that search. Try another name or category.</p>}
     </>

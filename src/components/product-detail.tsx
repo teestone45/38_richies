@@ -24,7 +24,6 @@ export default function ProductDetail({ product }: { product: Product }) {
       <div className="product-media">
         <div className={`product-stage product-stage--${selectedSize.replaceAll(" ", "-")}`}>
           <div className="product-stage__image" style={{ backgroundImage: `url("${product.images[selectedImage] ?? product.image}")` }} role="img" aria-label={`${product.title} photo ${selectedImage + 1} of ${product.images.length}`} />
-          {product.artwork && <span className={`product-print product-print--${product.artwork.palette}`} aria-hidden="true"><small>{product.artwork.top}</small><strong>{product.artwork.center}</strong><i>{product.artwork.bottom}</i></span>}
           <span className="product-stage__size">FIT PREVIEW / {selectedSize.toUpperCase()}</span>
         </div>
         {product.images.length > 1 && <div className="product-gallery" aria-label="Product images">{product.images.map((image, index) => <button type="button" className={index === selectedImage ? "product-gallery__image is-selected" : "product-gallery__image"} key={image} aria-label={`Show product photo ${index + 1}`} aria-pressed={index === selectedImage} style={{ backgroundImage: `url("${image}")` }} onClick={() => setSelectedImage(index)} />)}</div>}
