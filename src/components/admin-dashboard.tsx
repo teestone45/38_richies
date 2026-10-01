@@ -70,7 +70,7 @@ async function readResponse(response: Response): Promise<ApiResponse> {
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -141,14 +141,14 @@ export default function AdminDashboard() {
     const response = await fetch("/api/admin/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     });
     const result = await readResponse(response);
     if (!response.ok) {
       setError(result.error ?? "Could not sign in.");
       return;
     }
-    setEmail("");
+    setIdentifier("");
     setPassword("");
     setIsSignedIn(true);
     try {
@@ -315,8 +315,8 @@ export default function AdminDashboard() {
           <p className="admin-intro">Sign in to create, edit, hide, or remove products from your storefront.</p>
           {error && <p className="admin-alert" role="alert">{error}</p>}
           <form className="admin-login__form" onSubmit={signIn}>
-            <label htmlFor="admin-email">Admin email</label>
-            <input id="admin-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            <label htmlFor="admin-identifier">Email or username</label>
+            <input id="admin-identifier" type="text" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />
             <label htmlFor="admin-password">Admin password</label>
             <input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
             <button className="button button--lime" type="submit">Sign in <span aria-hidden="true">↗</span></button>

@@ -22,7 +22,7 @@ Create a Sanity project and dataset. Add both the default export from `src/sanit
 - `NEXT_PUBLIC_SANITY_DATASET`
 - `SANITY_API_WRITE_TOKEN` with dataset write permission
 - `SANITY_API_READ_TOKEN` when using a private dataset
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and a random `ADMIN_SESSION_SECRET` of at least 32 bytes
+- `ADMIN_USERNAME` and/or `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and a random `ADMIN_SESSION_SECRET` of at least 32 bytes
 
 Do not expose Sanity tokens or admin credentials through `NEXT_PUBLIC_` variables. After changing environment values, restart Next.js. Admin sessions use an HttpOnly SameSite cookie and expire after eight hours.
 

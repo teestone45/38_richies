@@ -14,15 +14,18 @@ function getSessionSecret() {
 }
 
 export function isAdminConfigured() {
-  return Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && getSessionSecret());
+  return Boolean((process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL) && process.env.ADMIN_PASSWORD && getSessionSecret());
 }
 
-export function credentialsMatch(email: string, password: string) {
+export function credentialsMatch(identifier: string, password: string) {
+  const expectedUsername = process.env.ADMIN_USERNAME?.trim().toUpperCase();
   const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const expectedPassword = process.env.ADMIN_PASSWORD;
-  const emailMatches = Boolean(expectedEmail && constantTimeEqual(email.trim().toLowerCase(), expectedEmail));
+  const normalizedIdentifier = identifier.trim();
+  const usernameMatches = Boolean(expectedUsername && constantTimeEqual(normalizedIdentifier.toUpperCase(), expectedUsername));
+  const emailMatches = Boolean(expectedEmail && constantTimeEqual(normalizedIdentifier.toLowerCase(), expectedEmail));
   const passwordMatches = Boolean(expectedPassword && constantTimeEqual(password, expectedPassword));
-  return emailMatches && passwordMatches;
+  return (usernameMatches || emailMatches) && passwordMatches;
 }
 
 export function createAdminSession() {

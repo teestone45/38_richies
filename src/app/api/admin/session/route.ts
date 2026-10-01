@@ -2,7 +2,7 @@ import { createAdminSession, credentialsMatch, hasAdminSession, isAdminConfigure
 
 export async function GET(request: Request) {
   if (!isAdminConfigured()) {
-    return Response.json({ authenticated: false, error: "Set ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_SESSION_SECRET to enable the admin dashboard." }, { status: 503 });
+    return Response.json({ authenticated: false, error: "Set ADMIN_USERNAME or ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_SESSION_SECRET to enable the admin dashboard." }, { status: 503 });
   }
   return Response.json({ authenticated: hasAdminSession(request) });
 }
@@ -10,17 +10,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "Invalid request origin." }, { status: 403 });
   if (!isAdminConfigured()) {
-    return Response.json({ error: "Set ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_SESSION_SECRET to enable admin sign-in." }, { status: 503 });
+    return Response.json({ error: "Set ADMIN_USERNAME or ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_SESSION_SECRET to enable admin sign-in." }, { status: 503 });
   }
 
-  let body: { email?: unknown; password?: unknown };
+  let body: { identifier?: unknown; password?: unknown };
   try {
-    body = await request.json() as { email?: unknown; password?: unknown };
+    body = await request.json() as { identifier?: unknown; password?: unknown };
   } catch {
     return Response.json({ error: "Invalid sign-in request." }, { status: 400 });
   }
-  if (!body || typeof body.email !== "string" || typeof body.password !== "string" || !credentialsMatch(body.email, body.password)) {
-    return Response.json({ error: "The email or password is incorrect." }, { status: 401 });
+  if (!body || typeof body.identifier !== "string" || typeof body.password !== "string" || !credentialsMatch(body.identifier, body.password)) {
+    return Response.json({ error: "The email/username or password is incorrect." }, { status: 401 });
   }
 
   return Response.json({ authenticated: true }, {
