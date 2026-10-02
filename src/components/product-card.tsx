@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatCurrency } from "@/lib/currency";
 import type { Product } from "@/lib/products";
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -13,7 +14,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="product-card__meta">
           <div><h3 className="product-card__name">{product.title}</h3><p className="product-card__detail">{product.printMethod ?? product.category} / {product.sizes.join(" · ")}</p></div>
-          <span className="product-card__price">${(product.priceCents / 100).toFixed(2)}</span>
+          <span className="product-card__price">{formatCurrency(product.priceCents / 100)}</span>
         </div>
       </Link>
     </article>

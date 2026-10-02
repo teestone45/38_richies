@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     lineItems.push({
       price_data: {
-        currency: "usd",
+        currency: "ghs",
         product_data: { name: `${product.title} / ${item.size} / ${selectedColor}`, metadata: { product_slug: product.slug, size: item.size, color: selectedColor } },
         unit_amount: product.priceCents,
       },
@@ -62,12 +62,12 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       metadata: sessionMetadata,
       automatic_tax: { enabled: process.env.STRIPE_AUTOMATIC_TAX === "true" },
-      shipping_address_collection: { allowed_countries: ["US"] },
+      shipping_address_collection: { allowed_countries: ["GH"] },
       shipping_options: [{
         shipping_rate_data: {
           type: "fixed_amount",
-          fixed_amount: { amount: subtotal >= 10000 ? 0 : 800, currency: "usd" },
-          display_name: subtotal >= 10000 ? "Complimentary US shipping" : "US standard shipping",
+          fixed_amount: { amount: subtotal >= 10000 ? 0 : 800, currency: "ghs" },
+          display_name: subtotal >= 10000 ? "Complimentary Ghana shipping" : "Ghana standard shipping",
           delivery_estimate: {
             minimum: { unit: "business_day", value: 3 },
             maximum: { unit: "business_day", value: 7 },

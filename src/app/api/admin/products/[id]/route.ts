@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { hasAdminSession, isSameOriginRequest } from "@/lib/admin-auth";
 import { getStarterProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
@@ -164,6 +165,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       };
       await client.create({ ...starterDocument, ...update, _id: targetId, _type: "product" });
     }
+    revalidatePath("/");
+    revalidatePath("/product/[slug]", "page");
     return Response.json({ updated: true });
   } catch (error) {
     console.error("Sanity product update failed", error);
@@ -217,6 +220,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     } else if (existing) {
       await client.delete(existing._id);
     }
+    revalidatePath("/");
+    revalidatePath("/product/[slug]", "page");
     return Response.json({ deleted: true });
   } catch (error) {
     console.error("Sanity product deletion failed", error);

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { formatCurrency } from "@/lib/currency";
 
 type AdminProduct = {
   _id: string;
@@ -579,7 +580,7 @@ export default function AdminDashboard() {
           <div className="admin-image-generator">
             <p className="eyebrow">QUICK UPLOAD / MANUAL DROP</p>
             <label htmlFor="manual-upload-title">T-shirt title<input id="manual-upload-title" type="text" value={manualUploadTitle} onChange={(event) => setManualUploadTitle(event.target.value)} placeholder="38 RICHES Signature Tee" required /></label>
-            <label htmlFor="manual-upload-price">Price<input id="manual-upload-price" type="number" min="0.01" step="0.01" value={manualUploadPrice} onChange={(event) => setManualUploadPrice(event.target.value)} placeholder="45.00" required /></label>
+            <label htmlFor="manual-upload-price">Price (GHS)<input id="manual-upload-price" type="number" min="0.01" step="0.01" value={manualUploadPrice} onChange={(event) => setManualUploadPrice(event.target.value)} placeholder="45.00" required /></label>
             <label htmlFor="manual-upload-category">Category<input id="manual-upload-category" type="text" value={manualUploadCategory} onChange={(event) => setManualUploadCategory(event.target.value)} placeholder="Graphic tee" /></label>
             <label htmlFor="manual-upload-description">Description<textarea id="manual-upload-description" rows={3} value={manualUploadDescription} onChange={(event) => setManualUploadDescription(event.target.value)} placeholder="Premium oversized streetwear tee built for everyday wear." /></label>
             <label className="admin-artwork-upload" htmlFor="manual-upload-images">Upload product photo(s)<input id="manual-upload-images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => setManualUploadFiles(Array.from(event.currentTarget.files ?? []))} /><small>{manualUploadFiles.length ? `${manualUploadFiles.length} image(s) selected` : "JPG, PNG, or WebP. Upload one or more product shots."}</small></label>
@@ -601,7 +602,7 @@ export default function AdminDashboard() {
             </div>
             {generatedImageDataUrl && <div className="admin-generated-image"><Image src={generatedImageDataUrl} alt="AI-generated clothing product preview" width={560} height={560} unoptimized /><button className="admin-generated-image__remove" type="button" onClick={() => setGeneratedImageDataUrl("")}>Remove generated image</button></div>}
             {generatedProductDetails && <section className="admin-generated-details" aria-label="AI-generated product details">
-              <div className="admin-generated-details__heading"><span>AI PRODUCT DRAFT</span><strong>${(Number(manualProductDetails.price) || generatedProductDetails.price).toFixed(2)} <small>suggested USD</small></strong></div>
+              <div className="admin-generated-details__heading"><span>AI PRODUCT DRAFT</span><strong>{formatCurrency(Number(manualProductDetails.price) || generatedProductDetails.price)} <small>suggested price</small></strong></div>
               <h3>{manualProductDetails.title || generatedProductDetails.title}</h3>
               <p className="admin-generated-details__meta">{manualProductDetails.category || generatedProductDetails.category} / {(generatedProductDetails.colors?.length ? generatedProductDetails.colors : ["Black"]).join(", ")} / XL · 2XL</p>
               <p>{manualProductDetails.description || generatedProductDetails.description}</p>
@@ -611,12 +612,12 @@ export default function AdminDashboard() {
                 <p className="eyebrow">COMPLETE PRODUCT DETAILS</p>
                 <label htmlFor="manual-product-title">Name<input id="manual-product-title" value={manualProductDetails.title} onChange={(event) => updateManualProductDetails("title", event.target.value)} placeholder="38 RICHES Signature Tee" /></label>
                 <label htmlFor="manual-product-category">Category<input id="manual-product-category" value={manualProductDetails.category} onChange={(event) => updateManualProductDetails("category", event.target.value)} placeholder="Graphic tee" /></label>
-                <label htmlFor="manual-product-price">Price<input id="manual-product-price" type="number" min="0.01" step="0.01" value={manualProductDetails.price} onChange={(event) => updateManualProductDetails("price", event.target.value)} /></label>
+                <label htmlFor="manual-product-price">Price (GHS)<input id="manual-product-price" type="number" min="0.01" step="0.01" value={manualProductDetails.price} onChange={(event) => updateManualProductDetails("price", event.target.value)} /></label>
                 <label htmlFor="manual-product-description">Description<textarea id="manual-product-description" rows={4} value={manualProductDetails.description} onChange={(event) => updateManualProductDetails("description", event.target.value)} placeholder="Premium oversized streetwear tee..." /></label>
               </div>
             )}
           </div>
-          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || isGeneratingImage || !canManageProducts || !imagePrompt.trim()}>{isGeneratingImage ? "Generating mockup & details..." : isCreating ? generatedProductDetails ? "Publishing..." : "Generating & publishing..." : !canManageProducts ? "Connect Sanity to publish" : generatedProductDetails ? `Publish for $${(Number(manualProductDetails.price) || generatedProductDetails.price).toFixed(2)}` : "Generate & publish to storefront"}<span aria-hidden="true">↗</span></button></div>
+          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || isGeneratingImage || !canManageProducts || !imagePrompt.trim()}>{isGeneratingImage ? "Generating mockup & details..." : isCreating ? generatedProductDetails ? "Publishing..." : "Generating & publishing..." : !canManageProducts ? "Connect Sanity to publish" : generatedProductDetails ? `Publish for ${formatCurrency(Number(manualProductDetails.price) || generatedProductDetails.price)}` : "Generate & publish to storefront"}<span aria-hidden="true">↗</span></button></div>
           <p className="admin-ai-note" role="status">{isGeneratingImage ? "Generating mockup and product details with Venice AI..." : imageAnalysisMessage || "Generate a mockup to automatically draft the product name, colors, description, and suggested price. Standard sizing is XL / 2XL."}</p>
           {!canManageProducts && <p className="admin-ai-note" role="alert">Product publishing is unavailable until Sanity project, dataset, and write-token settings are configured.</p>}
         </form>
@@ -641,7 +642,7 @@ export default function AdminDashboard() {
                 <input className="admin-product-select" type="checkbox" aria-label={`Select ${product.title}`} checked={selectedIds.includes(product._id)} onChange={() => toggleProductSelection(product._id)} />
                 <div className="admin-product-row__image" style={{ backgroundImage: product.image ? `url("${product.image}")` : undefined }} role="img" aria-label={`${product.title} photo`} />
                 <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.sizes.join(" / ")}</p></div>
-                <label className="admin-product-row__price">PRICE<input aria-label={`Price for ${product.title}`} type="number" min="0.01" max="10000" step="0.01" value={product.priceValue} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { priceValue: event.target.value })} /></label>
+                <label className="admin-product-row__price">PRICE (GHS)<input aria-label={`Price in GHS for ${product.title}`} type="number" min="0.01" max="10000" step="0.01" value={product.priceValue} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { priceValue: event.target.value })} /></label>
                 <label className="admin-product-row__status">STATUS<select aria-label={`Status for ${product.title}`} value={product.active ? "true" : "false"} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { active: event.target.value === "true" })}><option value="true">Live</option><option value="false">Draft</option></select></label>
                 <div className="admin-product-row__commands">
                   <button className="admin-save" type="button" onClick={() => saveProduct(product)} disabled={!canManageProducts || savingId === product._id || deletingId === product._id}>{savingId === product._id ? "Saving..." : "Save"}</button>
@@ -677,7 +678,7 @@ export default function AdminDashboard() {
         <div className="admin-section__heading"><div><p className="eyebrow">PAYMENTS / FULFILLMENT</p><h2 id="orders-title">ORDERS</h2></div><span>{orders.length} ORDERS</span></div>
         {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Paid Stripe checkouts will appear here after the webhook is configured.</p> : <div className="admin-order-list">
           {orders.map((order) => <article className="admin-order-row" key={order._id}>
-            <div className="admin-order-row__summary"><strong>{order.stripeSessionId.replace("cs_", "ORDER ").slice(0, 24)}</strong><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span><span>${(order.amountTotal / 100).toFixed(2)} {order.currency?.toUpperCase()}</span></div>
+            <div className="admin-order-row__summary"><strong>{order.stripeSessionId.replace("cs_", "ORDER ").slice(0, 24)}</strong><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span><span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
             <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}</span>)}</div>
             <p className="admin-order-row__address">{order.shippingAddress}</p>
             <div className="admin-order-row__controls">

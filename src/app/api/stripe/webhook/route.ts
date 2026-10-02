@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { formatCurrency } from "@/lib/currency";
 import { getProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
       email: session.customer_details?.email ?? session.customer_email ?? "",
       items: orderItems,
       amountTotal: session.amount_total ?? 0,
-      currency: session.currency ?? "usd",
+      currency: session.currency ?? "ghs",
       status: inventoryIssue ? "inventory_issue" : "paid",
       shippingAddress,
       trackingNumber: "",
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
           from: process.env.ORDER_EMAIL_FROM,
           to: [email],
           subject: `38 RICHES order ${session.id}`,
-          text: `Thanks for your order. Your paid order total is $${((session.amount_total ?? 0) / 100).toFixed(2)}. Order reference: ${session.id}`,
+          text: `Thanks for your order. Your paid order total is ${formatCurrency((session.amount_total ?? 0) / 100, session.currency?.toUpperCase() ?? "GHS")}. Order reference: ${session.id}`,
         }),
       });
       if (emailResponse.ok) await sanity.patch(orderId).set({ emailNotifiedAt: new Date().toISOString() }).commit();

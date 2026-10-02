@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
+import { formatCurrency } from "@/lib/currency";
 
-const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+const formatPrice = (pesewas: number) => formatCurrency(pesewas / 100);
 
 export default function CartView() {
   const items = useCartStore((state) => state.items);
@@ -61,7 +62,7 @@ export default function CartView() {
             <p className="cart-summary__line"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></p>
             <p className="cart-summary__line"><span>Shipping</span><span>{subtotal >= 10000 ? "Complimentary" : "Calculated at checkout"}</span></p>
             <p className="cart-summary__line cart-summary__line--total"><span>Total before shipping</span><span>{formatPrice(subtotal)}</span></p>
-            <p className="cart-summary__shipping">Shipping is added securely at checkout. Complimentary US shipping over $100.</p>
+            <p className="cart-summary__shipping">Shipping is added securely at checkout. Complimentary Ghana shipping over GH₵100.</p>
             <button className="button button--lime" type="button" onClick={beginCheckout} disabled={isCheckingOut}>
               {isCheckingOut ? "Opening secure checkout..." : "Checkout securely"}<span aria-hidden="true">↗</span>
             </button>

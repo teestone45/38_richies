@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
+import { formatCurrency } from "@/lib/currency";
 import type { Product } from "@/lib/products";
 
 function getSwatchColor(color: string) {
@@ -70,7 +71,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         <p className="eyebrow">{product.badge} / 38 RICHES</p>
         <h1>{product.title}</h1>
         <p className="product-info__subtitle">{product.fabric} / {product.printMethod ?? "Printed"} print / Oversized fit</p>
-        <p className="product-info__price">${(product.priceCents / 100).toFixed(2)} <span className="muted">USD</span></p>
+        <p className="product-info__price">{formatCurrency(product.priceCents / 100)}</p>
         <p className="product-info__description">{product.description}</p>
         {colors.length > 0 && (
           <>
@@ -111,7 +112,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         <button className="button button--lime add-button" type="button" onClick={addToBag} disabled={outOfStock}>
           {outOfStock ? "Sold out" : added ? "Added to bag" : "Add to bag"}<span aria-hidden="true">{added ? "✓" : "↗"}</span>
         </button>
-        <p className="product-info__shipping">Complimentary shipping on orders over $100</p>
+        <p className="product-info__shipping">Complimentary Ghana shipping on orders over GH₵100</p>
       </div>
       <div className="product-specs" id="size-guide">
         <p><strong>Fit</strong>Relaxed oversized</p><p><strong>Fabric</strong>{product.fabric}</p><p><strong>Care</strong>Cold wash, inside out</p>

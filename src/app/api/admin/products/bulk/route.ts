@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { hasAdminSession, isSameOriginRequest } from "@/lib/admin-auth";
 import { getStarterProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
     for (const document of starterDocuments) transaction.createIfNotExists(document);
     for (const product of updates) transaction.patch(product.id, (patch) => patch.set(changes));
     await transaction.commit();
+    revalidatePath("/");
+    revalidatePath("/product/[slug]", "page");
     return Response.json({ updated: updates.length });
   } catch (error) {
     console.error("Bulk product update failed", error);

@@ -5,7 +5,7 @@ const productSchema = {
   fields: [
     { name: "title", title: "Title", type: "string", validation: (rule: { required: () => unknown }) => rule.required() },
     { name: "slug", title: "Slug", type: "slug", options: { source: "title", maxLength: 96 }, validation: (rule: { required: () => unknown }) => rule.required() },
-    { name: "price", title: "Price (USD)", type: "number", validation: (rule: { required: () => { positive: () => unknown } }) => rule.required().positive() },
+    { name: "price", title: "Price (GHS)", type: "number", validation: (rule: { required: () => { positive: () => unknown } }) => rule.required().positive() },
     { name: "description", title: "Description", type: "text", rows: 4 },
     { name: "image", title: "External image URL", type: "url" },
     { name: "images", title: "Product images", type: "array", of: [{ type: "image", options: { hotspot: true } }] },
@@ -54,7 +54,7 @@ export const orderSchema = {
     { name: "stripeSessionId", title: "Stripe Checkout Session", type: "string" },
     { name: "email", title: "Customer email", type: "string" },
     { name: "items", title: "Items", type: "array", of: [{ type: "object", fields: [{ name: "productId", type: "string" }, { name: "title", type: "string" }, { name: "size", type: "string" }, { name: "color", type: "string" }, { name: "quantity", type: "number" }, { name: "unitAmount", type: "number" }] }] },
-    { name: "amountTotal", title: "Total (cents)", type: "number" },
+    { name: "amountTotal", title: "Total (minor units)", type: "number" },
     { name: "currency", title: "Currency", type: "string" },
     { name: "stripePaymentIntentId", title: "Stripe payment intent", type: "string" },
     { name: "status", title: "Fulfillment status", type: "string", options: { list: ["paid", "packing", "shipped", "cancelled", "inventory_issue"] } },
