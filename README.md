@@ -30,6 +30,10 @@ Stock is untracked until you enter a quantity for every available size, e.g. `M:
 
 Product photos support JPG, PNG, and WebP, up to eight images per product and 8 MB per file. Featured products sort before the rest of the catalog.
 
+Selecting the first photo in the new-product form can draft a title, URL slug, category, colors, and description with OpenAI vision. Set the server-only `OPENAI_API_KEY` locally and in Vercel to enable it; optionally set `OPENAI_VISION_MODEL` (defaults to `gpt-4o-mini`). Review all suggestions and enter price, fabric, and stock yourself before uploading. AI drafting does not publish products; publishing still requires the Sanity write configuration above and an explicit form submission.
+
+The new-product form can also generate a product-photo preview from a prompt with Venice AI. Set the server-only `VENICE_API_KEY` locally and in Vercel; optionally set `VENICE_IMAGE_MODEL` (defaults to `gpt-image-2-5-flare`). Generated images consume Venice credits. Review the preview, complete the product details, and submit the form to upload the image to Sanity and publish the product. Image models may not render exact logos or text; use a real uploaded reference when exact artwork is required.
+
 ## Stripe and orders
 
 Set `STRIPE_SECRET_KEY` to a test key while developing. Checkout uses server-side catalog prices, US shipping ($8 below $100, complimentary at or above $100), and Stripe promotion codes. Test discount codes must be created in Stripe.
@@ -50,4 +54,4 @@ Order confirmations and shipped notifications are sent only when `RESEND_API_KEY
 
 ## Deployment
 
-Deploy the Next.js app to Vercel and set all required Sanity, admin, Stripe, webhook, and optional Resend environment variables there. Set `NEXT_PUBLIC_SITE_URL` to the production origin. Add the Stripe webhook endpoint for the deployed origin, test a complete checkout including a promotion code, verify order/stock updates, then check fulfillment and email flows before accepting live payments.
+Deploy the Next.js app to Vercel and set all required Sanity, admin, Stripe, webhook, and optional Resend environment variables there. Add `OPENAI_API_KEY` to enable admin photo drafting. Set `NEXT_PUBLIC_SITE_URL` to the production origin. Add the Stripe webhook endpoint for the deployed origin, test a complete checkout including a promotion code, verify order/stock updates, then check fulfillment and email flows before accepting live payments.

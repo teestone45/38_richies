@@ -55,5 +55,33 @@ export function sessionCookie(value: string, maxAge = sessionDurationSeconds) {
 
 export function isSameOriginRequest(request: Request) {
   const origin = request.headers.get("origin");
-  return !origin || origin === new URL(request.url).origin;
+  if (!origin) return true;
+
+  let originUrl: URL;
+  try {
+    originUrl = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (originUrl.origin !== origin) return false;
+
+  const requestUrl = new URL(request.url);
+  if (originUrl.origin === requestUrl.origin) return true;
+
+  const hosts = [
+    request.headers.get("x-forwarded-host")?.split(",")[0].trim(),
+    request.headers.get("host")?.split(",")[0].trim(),
+  ].filter((host): host is string => Boolean(host));
+  const protocols = [
+    request.headers.get("x-forwarded-proto")?.split(",")[0].trim(),
+    requestUrl.protocol.slice(0, -1),
+  ].filter((protocol): protocol is string => protocol === "http" || protocol === "https");
+
+  return hosts.some((host) => protocols.some((protocol) => {
+    try {
+      return new URL(`${protocol}://${host}`).origin === originUrl.origin;
+    } catch {
+      return false;
+    }
+  }));
 }

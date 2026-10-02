@@ -88,7 +88,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                   style={{
                     backgroundColor: getSwatchColor(color),
                     color: color.toLowerCase().includes("white") || color.toLowerCase().includes("cream") || color.toLowerCase().includes("stone") ? "#111111" : "#f5f5f5",
-                    borderColor: selectedColor === color ? "#111111" : "rgba(17, 17, 17, 0.2)",
+                    borderColor: selectedColor === color ? "#55bfd8" : "rgba(7, 27, 42, 0.32)",
                   }}
                 >
                   <span aria-hidden="true" style={{ display: "inline-block", width: 16, height: 16, borderRadius: "50%", backgroundColor: getSwatchColor(color), border: "1px solid rgba(17,17,17,0.15)" }} />

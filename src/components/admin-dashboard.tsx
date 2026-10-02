@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 type AdminProduct = {
   _id: string;
@@ -40,6 +41,19 @@ type AdminOrder = {
 type ApiResponse = {
   error?: string;
   authenticated?: boolean;
+  draft?: {
+    title: string;
+    slug: string;
+    category: string;
+    badge: string;
+    description: string;
+    colors: string[];
+    sizes: string[];
+    dtfPlacement: string;
+    fabric: string;
+    printMethod: string;
+  };
+  imageDataUrl?: string;
   products?: Omit<AdminProduct, "priceValue">[];
   canManageProducts?: boolean;
   storageMessage?: string;
@@ -87,6 +101,12 @@ export default function AdminDashboard() {
   const [deletingId, setDeletingId] = useState("");
   const [editingId, setEditingId] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [imageAnalysisMessage, setImageAnalysisMessage] = useState("");
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState("");
+  const createProductForm = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -246,16 +266,89 @@ export default function AdminDashboard() {
     setNotice("");
     const form = event.currentTarget;
     try {
-      const response = await fetch("/api/admin/products", { method: "POST", body: new FormData(form) });
+      const productForm = new FormData(form);
+      const imageInput = form.elements.namedItem("images");
+      const selectedImages = imageInput instanceof HTMLInputElement ? imageInput.files?.length ?? 0 : 0;
+      if (selectedImages + Number(Boolean(generatedImageDataUrl)) === 0) throw new Error("Generate a clothing image or choose at least one product photo.");
+      if (selectedImages + Number(Boolean(generatedImageDataUrl)) > 8) throw new Error("Upload no more than 8 product photos, including the generated image.");
+      if (generatedImageDataUrl) {
+        const generatedResponse = await fetch(generatedImageDataUrl);
+        const generatedBlob = await generatedResponse.blob();
+        productForm.append("images", new File([generatedBlob], "venice-generated-product.webp", { type: "image/webp" }));
+      }
+      const response = await fetch("/api/admin/products", { method: "POST", body: productForm });
       const result = await readResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Could not create product.");
       form.reset();
+      setImagePrompt("");
+      setGeneratedImageDataUrl("");
+      setImageAnalysisMessage("");
       await refreshProducts();
       setNotice("Product added to your catalog.");
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Could not create product.");
     } finally {
       setIsCreating(false);
+    }
+  }
+
+  async function generateClothingImage() {
+    setIsGeneratingImage(true);
+    setImageAnalysisMessage("");
+    setError("");
+    try {
+      const response = await fetch("/api/admin/products/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: imagePrompt }),
+      });
+      const result = await readResponse(response);
+      if (!response.ok || !result.imageDataUrl) throw new Error(result.error ?? "Could not generate a clothing image.");
+      setGeneratedImageDataUrl(result.imageDataUrl);
+      setImageAnalysisMessage("Image preview generated. Review it, complete the product details, then upload to publish.");
+    } catch (generationError) {
+      setImageAnalysisMessage(generationError instanceof Error ? generationError.message : "Could not generate a clothing image.");
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  }
+
+  async function analyzeProductImage(image: File) {
+    setIsAnalyzingImage(true);
+    setImageAnalysisMessage("");
+    setError("");
+    const form = new FormData();
+    form.set("image", image);
+    try {
+      const response = await fetch("/api/admin/products/analyze-image", { method: "POST", body: form });
+      const result = await readResponse(response);
+      if (!response.ok || !result.draft) throw new Error(result.error ?? "Could not draft product details from this image.");
+
+      const productForm = createProductForm.current;
+      if (!productForm) return;
+      const draft = result.draft as {
+        title: string; slug: string; category: string; badge: string; description: string;
+        colors: string[]; sizes: string[]; dtfPlacement: string; fabric: string; printMethod: string;
+      };
+      const setField = (name: string, value: string) => {
+        const field = productForm.elements.namedItem(name);
+        if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) field.value = value;
+      };
+      setField("title", draft.title);
+      setField("slug", draft.slug);
+      setField("category", draft.category);
+      setField("badge", draft.badge);
+      setField("description", draft.description);
+      setField("colors", draft.colors.join(", "));
+      setField("sizes", draft.sizes.join(", "));
+      setField("dtfPlacement", draft.dtfPlacement);
+      setField("fabric", draft.fabric);
+      setField("printMethod", draft.printMethod);
+      setImageAnalysisMessage("AI draft ready. Review and edit the suggestions, set price and stock, then upload to publish.");
+    } catch (analysisError) {
+      setImageAnalysisMessage(analysisError instanceof Error ? analysisError.message : "Could not analyze this image.");
+    } finally {
+      setIsAnalyzingImage(false);
     }
   }
 
@@ -353,7 +446,7 @@ export default function AdminDashboard() {
       {activeAdminView === "catalog" && <>
       <section className="admin-section" aria-labelledby="new-product-title">
         <div className="admin-section__heading"><div><p className="eyebrow">ADD TO THE LINEUP</p><h2 id="new-product-title">NEW PIECE</h2></div><span>01 / CREATE</span></div>
-        <form className="admin-product-form" onSubmit={createProduct}>
+        <form className="admin-product-form" ref={createProductForm} onSubmit={createProduct}>
           <label>Product name<input name="title" required maxLength={120} placeholder="Night Shift Tee" /></label>
           <label>URL slug<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="night-shift-tee" /></label>
           <label>Price (USD)<input name="price" type="number" required min="0.01" max="10000" step="0.01" placeholder="45.00" /></label>
@@ -363,13 +456,24 @@ export default function AdminDashboard() {
           <label>Available sizes<input name="sizes" required defaultValue="XL, 2XL" placeholder="XL, 2XL" /></label>
           <label>Stock by size<input name="stock" placeholder="XL:4, 2XL:2" /><small>Leave blank to leave stock untracked.</small></label>
           <label className="admin-product-form__wide">Description<textarea name="description" rows={3} placeholder="Fabric, fit, print details..." /></label>
+          <div className="admin-image-generator admin-product-form__wide">
+            <p className="eyebrow">VENICE AI / IMAGE STUDIO</p>
+            <label htmlFor="product-image-prompt">Describe the clothing image<textarea id="product-image-prompt" rows={4} maxLength={4000} value={imagePrompt} onChange={(event) => setImagePrompt(event.target.value)} placeholder="Oversized heavyweight black tee, front view, small silver 38 RICHES chest graphic, washed cotton texture..." /></label>
+            <div className="admin-image-generator__actions">
+              <button className="button button--paper" type="button" onClick={() => void generateClothingImage()} disabled={isGeneratingImage || !imagePrompt.trim()}>{isGeneratingImage ? "Generating image..." : "Generate clothing image"}<span aria-hidden="true">✦</span></button>
+              <small>Venice charges credits per generation. Text and logos may not render exactly as prompted.</small>
+            </div>
+            {generatedImageDataUrl && <div className="admin-generated-image"><Image src={generatedImageDataUrl} alt="AI-generated clothing product preview" width={560} height={560} unoptimized /><button className="admin-generated-image__remove" type="button" onClick={() => setGeneratedImageDataUrl("")}>Remove generated image</button></div>}
+          </div>
           <label>Print placement<input name="dtfPlacement" placeholder="A3 front print" /></label>
           <label>Fabric / weight<input name="fabric" placeholder="280 GSM cotton" /></label>
           <label>Print method<select name="printMethod" defaultValue="DTF"><option>DTF</option><option>DTG</option><option>Embroidered</option></select></label>
           <label>Store status<select name="active" defaultValue="true"><option value="true">Live</option><option value="false">Draft</option></select></label>
           <label>Feature product<select name="featured" defaultValue="false"><option value="false">Standard</option><option value="true">Featured</option></select></label>
-          <label className="admin-upload">Product photos<input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple required /><small>Up to 8 JPG, PNG or WebP files · 8 MB each</small></label>
-          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || !canManageProducts}>{isCreating ? "Uploading..." : "Upload product"}<span aria-hidden="true">↗</span></button></div>
+          <label className="admin-upload">Add product photos<input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { const image = event.currentTarget.files?.[0]; if (image) void analyzeProductImage(image); }} /><small>Optional if you generated an image above. Up to 8 photos total; generated and uploaded images are published together.</small></label>
+          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || !canManageProducts}>{isCreating ? "Uploading..." : canManageProducts ? "Upload product" : "Connect Sanity to publish"}<span aria-hidden="true">↗</span></button></div>
+          <p className="admin-ai-note" role="status">{isGeneratingImage ? "Generating with Venice AI..." : isAnalyzingImage ? "Analyzing clothing photo..." : imageAnalysisMessage || "Venice image generation requires VENICE_API_KEY on the server. Photo detail drafting separately requires OPENAI_API_KEY."}</p>
+          {!canManageProducts && <p className="admin-ai-note" role="alert">Product publishing is unavailable until Sanity project, dataset, and write-token settings are configured.</p>}
         </form>
       </section>
 

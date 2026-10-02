@@ -181,15 +181,16 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!/^[A-Za-z0-9._-]{1,128}$/.test(id)) return Response.json({ error: "Invalid product ID." }, { status: 400 });
   try {
     const localSlug = id.startsWith("local-") ? id.slice("local-".length) : null;
-    const starter = localSlug ? getStarterProductBySlug(localSlug) : undefined;
-    if (localSlug && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
     const existing = localSlug
-      ? await client.fetch<{ _id: string } | null>(`*[_type == "product" && slug.current == $slug][0]{_id}`, { slug: localSlug })
+      ? await client.fetch<{ _id: string; slug: string } | null>(`*[_type == "product" && slug.current == $slug][0]{_id, "slug": slug.current}`, { slug: localSlug })
       : await client.fetch<{ _id: string; slug: string } | null>(`*[_type == "product" && _id == $id][0]{_id, "slug": slug.current}`, { id });
+    const starterSlug = localSlug ?? existing?.slug;
+    const starter = starterSlug ? getStarterProductBySlug(starterSlug) : undefined;
+    if (localSlug && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
     if (!existing && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
 
     if (starter) {
-      const targetId = existing?._id ?? `product-${localSlug}`;
+      const targetId = existing?._id ?? `product-${starter.slug}`;
       if (existing) {
         await client.patch(targetId).set({ active: false, removed: true }).commit();
       } else {
