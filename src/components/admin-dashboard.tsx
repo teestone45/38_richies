@@ -122,6 +122,34 @@ export default function AdminDashboard() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState("");
   const [generatedProductDetails, setGeneratedProductDetails] = useState<ApiResponse["productDetails"]>();
+  const [manualProductDetails, setManualProductDetails] = useState({ title: "", category: "Graphic tee", description: "", price: "45.00" });
+  const [manualUploadTitle, setManualUploadTitle] = useState("");
+  const [manualUploadPrice, setManualUploadPrice] = useState("45.00");
+  const [manualUploadCategory, setManualUploadCategory] = useState("Graphic tee");
+  const [manualUploadDescription, setManualUploadDescription] = useState("");
+  const [manualUploadFiles, setManualUploadFiles] = useState<File[]>([]);
+  const [isQuickUploading, setIsQuickUploading] = useState(false);
+
+  function isProductDetailsComplete(productDetails?: ApiResponse["productDetails"]) {
+    if (!productDetails) return false;
+    return Boolean(productDetails.title.trim()) && Boolean(productDetails.category.trim()) && Boolean(productDetails.description.trim()) && Number(productDetails.price) > 0;
+  }
+
+  function updateManualProductDetails(field: "title" | "category" | "description" | "price", value: string) {
+    setManualProductDetails((current) => ({ ...current, [field]: value }));
+    setGeneratedProductDetails((current) => {
+      if (!current) return current;
+      const next = { ...current };
+      if (field === "title") next.title = value.trim().slice(0, 120);
+      if (field === "category") next.category = value.trim().slice(0, 80) || "Graphic tee";
+      if (field === "description") next.description = value.trim().slice(0, 2000);
+      if (field === "price") {
+        const numericPrice = Number(value);
+        next.price = Number.isFinite(numericPrice) && numericPrice > 0 ? Number(numericPrice.toFixed(2)) : 45;
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -316,20 +344,53 @@ export default function AdminDashboard() {
         if (!generationResponse.ok || !generationResult.imageDataUrl) throw new Error(generationResult.error ?? "Could not generate a clothing mockup.");
         imageDataUrl = generationResult.imageDataUrl;
         setGeneratedImageDataUrl(imageDataUrl);
+        const fallbackDetails = generationResult.productDetails ?? {
+          title: "",
+          slug: "",
+          category: "Graphic tee",
+          description: "",
+          price: 45,
+          colors: ["Black"],
+        };
+        setGeneratedProductDetails(fallbackDetails);
+        setManualProductDetails({
+          title: fallbackDetails.title,
+          category: fallbackDetails.category,
+          description: fallbackDetails.description,
+          price: fallbackDetails.price.toFixed(2),
+        });
         if (!generationResult.productDetails) {
-          const detailsError = generationResult.productDetailsError ?? "Could not draft product details for this mockup.";
-          setImageAnalysisMessage(detailsError);
-          throw new Error(detailsError);
+          setImageAnalysisMessage("Mockup generated. Using a default product draft and publishing to the storefront...");
+        } else if (!isProductDetailsComplete(fallbackDetails)) {
+          setImageAnalysisMessage(generationResult.productDetailsError ?? "Mockup generated. Using a sensible default draft and publishing to the storefront...");
+        } else {
+          setImageAnalysisMessage("Mockup and details generated. Publishing to the storefront now...");
         }
-        productDetails = generationResult.productDetails;
-        setGeneratedProductDetails(productDetails);
-        setImageAnalysisMessage("Mockup and details generated. Publishing to the storefront now...");
+        productDetails = generationResult.productDetails ?? fallbackDetails;
         setIsGeneratingImage(false);
+      }
+
+      if (!productDetails || !isProductDetailsComplete(productDetails)) {
+        const fallbackDetails = {
+          title: manualProductDetails.title.trim() || productDetails?.title || "",
+          slug: productDetails?.slug || "",
+          category: manualProductDetails.category.trim() || productDetails?.category || "Graphic tee",
+          description: manualProductDetails.description.trim() || productDetails?.description || "",
+          price: Number(manualProductDetails.price) || productDetails?.price || 45,
+          colors: productDetails?.colors && productDetails.colors.length ? productDetails.colors : ["Black"],
+        };
+        if (!fallbackDetails.title || !fallbackDetails.category || !fallbackDetails.description || !Number.isFinite(fallbackDetails.price) || fallbackDetails.price <= 0) {
+          fallbackDetails.title = fallbackDetails.title || "38 RICHES Graphic Tee";
+          fallbackDetails.category = fallbackDetails.category || "Graphic tee";
+          fallbackDetails.description = fallbackDetails.description || `${fallbackDetails.category} styled for a premium 38 RICHES streetwear drop. Designed with a clean, elevated silhouette and bold front-facing energy.`;
+          fallbackDetails.price = Number(fallbackDetails.price) > 0 ? Number(fallbackDetails.price) : 45;
+        }
+        productDetails = fallbackDetails;
       }
 
       const productForm = new FormData(form);
       productForm.set("title", productDetails.title);
-      productForm.set("slug", productDetails.slug);
+      productForm.set("slug", productDetails.slug || "38-riches-piece");
       productForm.set("price", productDetails.price.toFixed(2));
       productForm.set("category", productDetails.category);
       productForm.set("badge", "NEW DROP");
@@ -348,7 +409,7 @@ export default function AdminDashboard() {
       const response = await fetch("/api/admin/products", { method: "POST", body: productForm });
       const result = await readResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Could not create product.");
-      form.reset();
+      if (form) form.reset();
       setImagePrompt("");
       setArtworkFile(null);
       setGeneratedImageDataUrl("");
@@ -361,6 +422,61 @@ export default function AdminDashboard() {
     } finally {
       setIsCreating(false);
       setIsGeneratingImage(false);
+    }
+  }
+
+  async function publishManualUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canManageProducts) return;
+    const title = manualUploadTitle.trim();
+    const price = Number(manualUploadPrice);
+    if (!title || !Number.isFinite(price) || price <= 0) {
+      setError("Add a T-shirt title and a valid price before publishing.");
+      return;
+    }
+    if (manualUploadFiles.length === 0) {
+      setError("Upload at least one product image before publishing.");
+      return;
+    }
+
+    setIsQuickUploading(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const slug = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "38-riches-piece";
+      const productForm = new FormData(event.currentTarget);
+      productForm.set("title", title);
+      productForm.set("slug", slug);
+      productForm.set("price", price.toFixed(2));
+      productForm.set("category", manualUploadCategory.trim() || "Graphic tee");
+      productForm.set("badge", "NEW DROP");
+      productForm.set("colors", "Black");
+      productForm.set("sizes", "XL, 2XL");
+      productForm.set("stock", "");
+      productForm.set("description", manualUploadDescription.trim() || `${title} is a premium 38 RICHES streetwear tee built for everyday wear and comfort.`);
+      productForm.set("dtfPlacement", "Front graphic, centered on chest.");
+      productForm.set("fabric", "Heavyweight cotton blend");
+      productForm.set("printMethod", "DTF");
+      productForm.set("active", "true");
+      productForm.set("featured", "false");
+      manualUploadFiles.forEach((file) => productForm.append("images", file));
+
+      const response = await fetch("/api/admin/products", { method: "POST", body: productForm });
+      const result = await readResponse(response);
+      if (!response.ok) throw new Error(result.error ?? "Could not publish the product.");
+      setManualUploadTitle("");
+      setManualUploadPrice("45.00");
+      setManualUploadCategory("Graphic tee");
+      setManualUploadDescription("");
+      setManualUploadFiles([]);
+      if (event.currentTarget) event.currentTarget.reset();
+      await refreshProducts();
+      setNotice(`${title} published to your storefront.`);
+    } catch (publishError) {
+      setError(publishError instanceof Error ? publishError.message : "Could not upload the product.");
+    } finally {
+      setIsQuickUploading(false);
     }
   }
 
@@ -458,6 +574,21 @@ export default function AdminDashboard() {
       {activeAdminView === "catalog" && <>
       <section className="admin-section" aria-labelledby="new-product-title">
         <div className="admin-section__heading"><div><p className="eyebrow">ADD TO THE LINEUP</p><h2 id="new-product-title">NEW PIECE</h2></div><span>01 / CREATE</span></div>
+
+        <form className="admin-product-form admin-product-form--studio" onSubmit={publishManualUpload}>
+          <div className="admin-image-generator">
+            <p className="eyebrow">QUICK UPLOAD / MANUAL DROP</p>
+            <label htmlFor="manual-upload-title">T-shirt title<input id="manual-upload-title" type="text" value={manualUploadTitle} onChange={(event) => setManualUploadTitle(event.target.value)} placeholder="38 RICHES Signature Tee" required /></label>
+            <label htmlFor="manual-upload-price">Price<input id="manual-upload-price" type="number" min="0.01" step="0.01" value={manualUploadPrice} onChange={(event) => setManualUploadPrice(event.target.value)} placeholder="45.00" required /></label>
+            <label htmlFor="manual-upload-category">Category<input id="manual-upload-category" type="text" value={manualUploadCategory} onChange={(event) => setManualUploadCategory(event.target.value)} placeholder="Graphic tee" /></label>
+            <label htmlFor="manual-upload-description">Description<textarea id="manual-upload-description" rows={3} value={manualUploadDescription} onChange={(event) => setManualUploadDescription(event.target.value)} placeholder="Premium oversized streetwear tee built for everyday wear." /></label>
+            <label className="admin-artwork-upload" htmlFor="manual-upload-images">Upload product photo(s)<input id="manual-upload-images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => setManualUploadFiles(Array.from(event.currentTarget.files ?? []))} /><small>{manualUploadFiles.length ? `${manualUploadFiles.length} image(s) selected` : "JPG, PNG, or WebP. Upload one or more product shots."}</small></label>
+          </div>
+          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isQuickUploading || !canManageProducts || !manualUploadTitle.trim() || !manualUploadFiles.length}>{isQuickUploading ? "Publishing..." : !canManageProducts ? "Connect Sanity to publish" : "Upload & publish to storefront"}<span aria-hidden="true">↗</span></button></div>
+          <p className="admin-ai-note" role="status">Use this quick-upload form to sell a product by image, title, and price without AI generation.</p>
+          {!canManageProducts && <p className="admin-ai-note" role="alert">Product publishing is unavailable until Sanity project, dataset, and write-token settings are configured.</p>}
+        </form>
+
         <form className="admin-product-form admin-product-form--studio" onSubmit={createProduct}>
           <div className="admin-image-generator">
             <p className="eyebrow">VENICE AI / IMAGE STUDIO</p>
@@ -470,13 +601,22 @@ export default function AdminDashboard() {
             </div>
             {generatedImageDataUrl && <div className="admin-generated-image"><Image src={generatedImageDataUrl} alt="AI-generated clothing product preview" width={560} height={560} unoptimized /><button className="admin-generated-image__remove" type="button" onClick={() => setGeneratedImageDataUrl("")}>Remove generated image</button></div>}
             {generatedProductDetails && <section className="admin-generated-details" aria-label="AI-generated product details">
-              <div className="admin-generated-details__heading"><span>AI PRODUCT DRAFT</span><strong>${generatedProductDetails.price.toFixed(2)} <small>suggested USD</small></strong></div>
-              <h3>{generatedProductDetails.title}</h3>
-              <p className="admin-generated-details__meta">{generatedProductDetails.category} / {generatedProductDetails.colors.join(", ") || "Black"} / XL · 2XL</p>
-              <p>{generatedProductDetails.description}</p>
+              <div className="admin-generated-details__heading"><span>AI PRODUCT DRAFT</span><strong>${(Number(manualProductDetails.price) || generatedProductDetails.price).toFixed(2)} <small>suggested USD</small></strong></div>
+              <h3>{manualProductDetails.title || generatedProductDetails.title}</h3>
+              <p className="admin-generated-details__meta">{manualProductDetails.category || generatedProductDetails.category} / {(generatedProductDetails.colors?.length ? generatedProductDetails.colors : ["Black"]).join(", ")} / XL · 2XL</p>
+              <p>{manualProductDetails.description || generatedProductDetails.description}</p>
             </section>}
+            {generatedImageDataUrl && generatedProductDetails && !isProductDetailsComplete(generatedProductDetails) && (
+              <div className="admin-generated-details admin-generated-details--manual">
+                <p className="eyebrow">COMPLETE PRODUCT DETAILS</p>
+                <label htmlFor="manual-product-title">Name<input id="manual-product-title" value={manualProductDetails.title} onChange={(event) => updateManualProductDetails("title", event.target.value)} placeholder="38 RICHES Signature Tee" /></label>
+                <label htmlFor="manual-product-category">Category<input id="manual-product-category" value={manualProductDetails.category} onChange={(event) => updateManualProductDetails("category", event.target.value)} placeholder="Graphic tee" /></label>
+                <label htmlFor="manual-product-price">Price<input id="manual-product-price" type="number" min="0.01" step="0.01" value={manualProductDetails.price} onChange={(event) => updateManualProductDetails("price", event.target.value)} /></label>
+                <label htmlFor="manual-product-description">Description<textarea id="manual-product-description" rows={4} value={manualProductDetails.description} onChange={(event) => updateManualProductDetails("description", event.target.value)} placeholder="Premium oversized streetwear tee..." /></label>
+              </div>
+            )}
           </div>
-          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || isGeneratingImage || !canManageProducts || !imagePrompt.trim()}>{isGeneratingImage ? "Generating mockup & details..." : isCreating ? generatedProductDetails ? "Publishing..." : "Generating & publishing..." : !canManageProducts ? "Connect Sanity to publish" : generatedProductDetails ? `Publish for $${generatedProductDetails.price.toFixed(2)}` : "Generate & publish to storefront"}<span aria-hidden="true">↗</span></button></div>
+          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || isGeneratingImage || !canManageProducts || !imagePrompt.trim()}>{isGeneratingImage ? "Generating mockup & details..." : isCreating ? generatedProductDetails ? "Publishing..." : "Generating & publishing..." : !canManageProducts ? "Connect Sanity to publish" : generatedProductDetails ? `Publish for $${(Number(manualProductDetails.price) || generatedProductDetails.price).toFixed(2)}` : "Generate & publish to storefront"}<span aria-hidden="true">↗</span></button></div>
           <p className="admin-ai-note" role="status">{isGeneratingImage ? "Generating mockup and product details with Venice AI..." : imageAnalysisMessage || "Generate a mockup to automatically draft the product name, colors, description, and suggested price. Standard sizing is XL / 2XL."}</p>
           {!canManageProducts && <p className="admin-ai-note" role="alert">Product publishing is unavailable until Sanity project, dataset, and write-token settings are configured.</p>}
         </form>

@@ -11,6 +11,82 @@ function slugify(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
 }
 
+function inferCategory(prompt: string) {
+  const value = prompt.toLowerCase();
+  if (value.includes("hoodie")) return "Hoodie";
+  if (value.includes("cap") || value.includes("hat")) return "Cap";
+  if (value.includes("crewneck") || value.includes("sweatshirt")) return "Crewneck";
+  if (value.includes("jacket")) return "Jacket";
+  if (value.includes("shorts")) return "Shorts";
+  if (value.includes("shirt") || value.includes("tee") || value.includes("graphic tee")) return "Graphic tee";
+  return "Graphic tee";
+}
+
+function inferProductTitle(prompt: string, category: string) {
+  const cleaned = prompt.replace(/\s+/g, " ").trim();
+  if (!cleaned) return `38 RICHES ${category}`;
+  const words = cleaned.split(" ").filter(Boolean).slice(0, 6);
+  const title = words.length ? words.join(" ") : category;
+  return title.length > 80 ? `${title.slice(0, 77).trim()}...` : title;
+}
+
+function inferPrice(category: string) {
+  const normalized = category.toLowerCase();
+  if (normalized.includes("hoodie") || normalized.includes("crewneck") || normalized.includes("jacket")) return 88;
+  if (normalized.includes("cap")) return 32;
+  return 45;
+}
+
+function normalizeProductDraft(raw: unknown, prompt: string): { title: string; slug: string; category: string; description: string; price: number; colors: string[] } | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const record = raw as Record<string, unknown>;
+
+  const category = typeof record.category === "string" && record.category.trim() ? record.category.trim().slice(0, 80) : inferCategory(prompt);
+  const titleSource = typeof record.title === "string" ? record.title.trim() : "";
+  const title = titleSource || inferProductTitle(prompt, category);
+  const descriptionSource = typeof record.description === "string" ? record.description.trim() : "";
+  const description = descriptionSource || `${category} styled for a premium 38 RICHES streetwear drop. Designed with a clean, elevated silhouette and bold front-facing energy.`;
+
+  let priceValue = typeof record.price === "number" ? record.price : Number(record.price);
+  if (!Number.isFinite(priceValue) || priceValue <= 0 || priceValue > 10000) priceValue = inferPrice(category);
+
+  const slug = typeof record.slug === "string" ? record.slug.trim() : title;
+  const colors = Array.isArray(record.colors)
+    ? [...new Set(record.colors.filter((color): color is string => typeof color === "string").map((color) => color.trim().slice(0, 30)).filter(Boolean))].slice(0, 12)
+    : [];
+
+  return {
+    title: title.slice(0, 120),
+    slug: slugify(slug) || slugify(title) || "38-riches-piece",
+    category,
+    description: description.slice(0, 2000),
+    price: Number(priceValue.toFixed(2)),
+    colors: colors.length ? colors : ["Black"],
+  };
+}
+
+async function fetchWithRetry(input: RequestInfo | URL, init: RequestInit, timeoutMs: number, retries = 2): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= retries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError ?? new Error("Venice request failed");
+}
+
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "Invalid request origin." }, { status: 403 });
   if (!hasAdminSession(request)) return Response.json({ error: "Sign in to generate product images." }, { status: 401 });
@@ -62,15 +138,14 @@ export async function POST(request: Request) {
   };
 
   try {
-    const response = await fetch("https://api.venice.ai/api/v1/image/generate", {
+    const response = await fetchWithRetry("https://api.venice.ai/api/v1/image/generate", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      signal: AbortSignal.timeout(44_000),
       body: JSON.stringify(imageRequestBody),
-    });
+    }, 44_000);
 
     if (!response.ok) {
       if (response.status === 401) return Response.json({ error: "Venice rejected the API key. Check VENICE_API_KEY in the server environment." }, { status: 502 });
@@ -95,13 +170,12 @@ export async function POST(request: Request) {
     let productDetails: { title: string; slug: string; category: string; description: string; price: number; colors: string[] } | undefined;
     let productDetailsError: string | undefined;
     try {
-      const detailsResponse = await fetch("https://api.venice.ai/api/v1/chat/completions", {
+      const detailsResponse = await fetchWithRetry("https://api.venice.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        signal: AbortSignal.timeout(8_000),
         body: JSON.stringify({
           model: process.env.VENICE_TEXT_MODEL || "qwen3-5-9b",
           temperature: 0.3,
@@ -121,7 +195,7 @@ export async function POST(request: Request) {
             },
           ],
         }),
-      });
+      }, 8_000);
 
       if (!detailsResponse.ok) {
         console.error("Venice product detail drafting failed", detailsResponse.status);
@@ -129,22 +203,14 @@ export async function POST(request: Request) {
       } else {
         const detailsResult = await detailsResponse.json() as { choices?: { message?: { content?: string | null } }[] };
         const content = detailsResult.choices?.[0]?.message?.content;
-        const parsed = content ? JSON.parse(content) as Record<string, unknown> : {};
-        const title = typeof parsed.title === "string" ? parsed.title.trim().slice(0, 120) : "";
-        const price = typeof parsed.price === "number" ? parsed.price : Number(parsed.price);
-        if (!title || !Number.isFinite(price) || price <= 0 || price > 10000) {
+        try {
+          const parsed = content ? JSON.parse(content) as unknown : undefined;
+          productDetails = normalizeProductDraft(parsed, prompt);
+          if (!productDetails) {
+            productDetailsError = "The image was generated, but product details were incomplete. Enter the name, category, description, and price manually.";
+          }
+        } catch {
           productDetailsError = "The image was generated, but product details were incomplete. Enter the name, category, description, and price manually.";
-        } else {
-          productDetails = {
-            title,
-            slug: slugify(typeof parsed.slug === "string" ? parsed.slug : title) || slugify(title),
-            category: typeof parsed.category === "string" && parsed.category.trim() ? parsed.category.trim().slice(0, 80) : "Graphic tee",
-            description: typeof parsed.description === "string" ? parsed.description.trim().slice(0, 2000) : "",
-            price: Number(price.toFixed(2)),
-            colors: Array.isArray(parsed.colors)
-              ? [...new Set(parsed.colors.filter((color): color is string => typeof color === "string").map((color) => color.trim().slice(0, 30)).filter(Boolean))].slice(0, 12)
-              : ["Black"],
-          };
         }
       }
     } catch (error) {
