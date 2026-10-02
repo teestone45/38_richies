@@ -71,6 +71,12 @@ type ApiResponse = {
   emailSent?: boolean;
 };
 
+const productPromptStarters = {
+  tee: "Oversized heavyweight streetwear T-shirt, front view, full garment centered, premium ecommerce studio photo, realistic cotton texture, bold but clean graphic placement, navy-blue studio background.",
+  hoodie: "Relaxed heavyweight pullover hoodie, front view, full garment centered, premium ecommerce studio photo, realistic fleece texture, structured hood and ribbed cuffs, navy-blue studio background.",
+  cap: "Structured six-panel streetwear cap, front view, full product centered, premium ecommerce studio photo, realistic cotton twill texture, clean embroidered front detail, navy-blue studio background.",
+};
+
 function toEditorProducts(products: ApiResponse["products"] = []): AdminProduct[] {
   return products.map((product) => {
     const rawInventory = (product as Omit<AdminProduct, "priceValue"> & { inventory?: { size: string; quantity: number }[] | Record<string, number> }).inventory;
@@ -112,6 +118,7 @@ export default function AdminDashboard() {
   const [isCreating, setIsCreating] = useState(false);
   const [imageAnalysisMessage, setImageAnalysisMessage] = useState("");
   const [imagePrompt, setImagePrompt] = useState("");
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageDataUrl, setGeneratedImageDataUrl] = useState("");
   const [generatedProductDetails, setGeneratedProductDetails] = useState<ApiResponse["productDetails"]>();
@@ -267,30 +274,75 @@ export default function AdminDashboard() {
     }
   }
 
+  function updateProductPrompt(prompt: string) {
+    setImagePrompt(prompt);
+    if (generatedImageDataUrl || generatedProductDetails) {
+      setGeneratedImageDataUrl("");
+      setGeneratedProductDetails(undefined);
+      setImageAnalysisMessage("");
+    }
+  }
+
+  function updateArtworkFile(file: File | null) {
+    if (file && file.size > 4 * 1024 * 1024) {
+      setError("Artwork must be 4 MB or smaller.");
+      return;
+    }
+    setArtworkFile(file);
+    if (generatedImageDataUrl || generatedProductDetails) {
+      setGeneratedImageDataUrl("");
+      setGeneratedProductDetails(undefined);
+      setImageAnalysisMessage("");
+    }
+  }
+
   async function createProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canManageProducts) return;
     setIsCreating(true);
     setError("");
     setNotice("");
     const form = event.currentTarget;
     try {
-      if (!generatedImageDataUrl || !generatedProductDetails) throw new Error("Generate a clothing image and product details first.");
+      let imageDataUrl = generatedImageDataUrl;
+      let productDetails = generatedProductDetails;
+      if (!imageDataUrl || !productDetails) {
+        setIsGeneratingImage(true);
+        const generationForm = new FormData();
+        generationForm.set("prompt", imagePrompt.trim());
+        if (artworkFile) generationForm.set("artwork", artworkFile);
+        const generationResponse = await fetch("/api/admin/products/generate-image", { method: "POST", body: generationForm });
+        const generationResult = await readResponse(generationResponse);
+        if (!generationResponse.ok || !generationResult.imageDataUrl) throw new Error(generationResult.error ?? "Could not generate a clothing mockup.");
+        imageDataUrl = generationResult.imageDataUrl;
+        setGeneratedImageDataUrl(imageDataUrl);
+        if (!generationResult.productDetails) {
+          const detailsError = generationResult.productDetailsError ?? "Could not draft product details for this mockup.";
+          setImageAnalysisMessage(detailsError);
+          throw new Error(detailsError);
+        }
+        productDetails = generationResult.productDetails;
+        setGeneratedProductDetails(productDetails);
+        setImageAnalysisMessage("Mockup and details generated. Publishing to the storefront now...");
+        setIsGeneratingImage(false);
+      }
+
       const productForm = new FormData(form);
-      productForm.set("title", generatedProductDetails.title);
-      productForm.set("slug", generatedProductDetails.slug);
-      productForm.set("price", generatedProductDetails.price.toFixed(2));
-      productForm.set("category", generatedProductDetails.category);
+      productForm.set("title", productDetails.title);
+      productForm.set("slug", productDetails.slug);
+      productForm.set("price", productDetails.price.toFixed(2));
+      productForm.set("category", productDetails.category);
       productForm.set("badge", "NEW DROP");
-      productForm.set("colors", generatedProductDetails.colors.join(", ") || "Black");
+      productForm.set("colors", productDetails.colors.join(", ") || "Black");
       productForm.set("sizes", "XL, 2XL");
       productForm.set("stock", "");
-      productForm.set("description", generatedProductDetails.description);
+      productForm.set("description", productDetails.description);
       productForm.set("dtfPlacement", "Front graphic, centered on chest.");
       productForm.set("fabric", "");
       productForm.set("printMethod", "DTF");
       productForm.set("active", "true");
       productForm.set("featured", "false");
-      const generatedResponse = await fetch(generatedImageDataUrl);
+      const generatedResponse = await fetch(imageDataUrl);
       const generatedBlob = await generatedResponse.blob();
       productForm.append("images", new File([generatedBlob], "venice-generated-product.webp", { type: "image/webp" }));
       const response = await fetch("/api/admin/products", { method: "POST", body: productForm });
@@ -298,41 +350,16 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(result.error ?? "Could not create product.");
       form.reset();
       setImagePrompt("");
+      setArtworkFile(null);
       setGeneratedImageDataUrl("");
       setGeneratedProductDetails(undefined);
       setImageAnalysisMessage("");
       await refreshProducts();
-      setNotice(`${generatedProductDetails.title} published to your storefront.`);
+      setNotice(`${productDetails.title} published to your storefront.`);
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Could not create product.");
+      setError(createError instanceof Error ? createError.message : "Could not generate and publish the product.");
     } finally {
       setIsCreating(false);
-    }
-  }
-
-  async function generateClothingImage() {
-    setIsGeneratingImage(true);
-    setImageAnalysisMessage("");
-    setError("");
-    try {
-      const response = await fetch("/api/admin/products/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt }),
-      });
-      const result = await readResponse(response);
-      if (!response.ok || !result.imageDataUrl) throw new Error(result.error ?? "Could not generate a clothing image.");
-      setGeneratedImageDataUrl(result.imageDataUrl);
-      if (result.productDetails) {
-        setGeneratedProductDetails(result.productDetails);
-        setImageAnalysisMessage("Mockup and product details are ready. Review the preview, then publish to your storefront.");
-      } else {
-        setGeneratedProductDetails(undefined);
-        setImageAnalysisMessage(result.productDetailsError ?? "Image preview generated. Complete the product details, then upload to publish.");
-      }
-    } catch (generationError) {
-      setImageAnalysisMessage(generationError instanceof Error ? generationError.message : "Could not generate a clothing image.");
-    } finally {
       setIsGeneratingImage(false);
     }
   }
@@ -434,14 +461,22 @@ export default function AdminDashboard() {
         <form className="admin-product-form admin-product-form--studio" onSubmit={createProduct}>
           <div className="admin-image-generator">
             <p className="eyebrow">VENICE AI / IMAGE STUDIO</p>
-            <label htmlFor="product-image-prompt">Describe the clothing image<textarea id="product-image-prompt" rows={4} maxLength={4000} value={imagePrompt} onChange={(event) => setImagePrompt(event.target.value)} placeholder="Oversized heavyweight black tee, front view, small silver 38 RICHES chest graphic, washed cotton texture..." /></label>
+            <label className="admin-prompt-starter" htmlFor="product-prompt-starter">Prompt starter<select id="product-prompt-starter" defaultValue="" onChange={(event) => { const starter = productPromptStarters[event.target.value as keyof typeof productPromptStarters]; if (starter) updateProductPrompt(starter); }}><option value="">Choose a garment starter</option><option value="tee">Streetwear tee</option><option value="hoodie">Heavy hoodie</option><option value="cap">Structured cap</option></select></label>
+            <label htmlFor="product-image-prompt">Describe the clothing image<textarea id="product-image-prompt" rows={4} maxLength={4000} value={imagePrompt} onChange={(event) => updateProductPrompt(event.target.value)} placeholder="Oversized heavyweight black tee, front view, small silver 38 RICHES chest graphic, washed cotton texture..." /></label>
+            <label className="admin-artwork-upload" htmlFor="product-artwork">Attach your art design (optional)<input id="product-artwork" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0] ?? null; updateArtworkFile(file); if (file && file.size > 4 * 1024 * 1024) event.currentTarget.value = ""; }} /><small>{artworkFile ? `Attached: ${artworkFile.name}` : "PNG, JPG, or WebP · 4 MB max. Transparent PNG artwork works best."}</small></label>
+            {artworkFile && <button className="admin-generated-image__remove" type="button" onClick={() => updateArtworkFile(null)}>Remove artwork</button>}
             <div className="admin-image-generator__actions">
-              <button className="button button--paper" type="button" onClick={() => void generateClothingImage()} disabled={isGeneratingImage || !imagePrompt.trim()}>{isGeneratingImage ? "Generating mockup..." : "Generate mockup & details"}<span aria-hidden="true">✦</span></button>
-              <small>Venice charges credits for image and detail generation. Review the suggested price; text and logos may not render exactly.</small>
+              <small>One click generates the garment, drafts the details and suggested price, then publishes it. Venice charges credits. Artwork guides the design but may not reproduce exactly.</small>
             </div>
             {generatedImageDataUrl && <div className="admin-generated-image"><Image src={generatedImageDataUrl} alt="AI-generated clothing product preview" width={560} height={560} unoptimized /><button className="admin-generated-image__remove" type="button" onClick={() => setGeneratedImageDataUrl("")}>Remove generated image</button></div>}
+            {generatedProductDetails && <section className="admin-generated-details" aria-label="AI-generated product details">
+              <div className="admin-generated-details__heading"><span>AI PRODUCT DRAFT</span><strong>${generatedProductDetails.price.toFixed(2)} <small>suggested USD</small></strong></div>
+              <h3>{generatedProductDetails.title}</h3>
+              <p className="admin-generated-details__meta">{generatedProductDetails.category} / {generatedProductDetails.colors.join(", ") || "Black"} / XL · 2XL</p>
+              <p>{generatedProductDetails.description}</p>
+            </section>}
           </div>
-          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || isGeneratingImage || !canManageProducts || !generatedProductDetails}>{isCreating ? "Publishing..." : !canManageProducts ? "Connect Sanity to publish" : generatedProductDetails ? "Publish to storefront" : "Generate a mockup first"}<span aria-hidden="true">↗</span></button></div>
+          <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isCreating || isGeneratingImage || !canManageProducts || !imagePrompt.trim()}>{isGeneratingImage ? "Generating mockup & details..." : isCreating ? generatedProductDetails ? "Publishing..." : "Generating & publishing..." : !canManageProducts ? "Connect Sanity to publish" : generatedProductDetails ? `Publish for $${generatedProductDetails.price.toFixed(2)}` : "Generate & publish to storefront"}<span aria-hidden="true">↗</span></button></div>
           <p className="admin-ai-note" role="status">{isGeneratingImage ? "Generating mockup and product details with Venice AI..." : imageAnalysisMessage || "Generate a mockup to automatically draft the product name, colors, description, and suggested price. Standard sizing is XL / 2XL."}</p>
           {!canManageProducts && <p className="admin-ai-note" role="alert">Product publishing is unavailable until Sanity project, dataset, and write-token settings are configured.</p>}
         </form>

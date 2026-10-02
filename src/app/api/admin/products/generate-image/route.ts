@@ -4,6 +4,8 @@ export const maxDuration = 60;
 
 const maximumPromptLength = 4000;
 const maximumImageBytes = 3 * 1024 * 1024;
+const maximumArtworkBytes = 4 * 1024 * 1024;
+const acceptedArtworkTypes = ["image/jpeg", "image/png", "image/webp"];
 
 function slugify(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
@@ -16,22 +18,48 @@ export async function POST(request: Request) {
   const apiKey = process.env.VENICE_API_KEY;
   if (!apiKey) return Response.json({ error: "Image generation is not configured. Add VENICE_API_KEY to the server environment." }, { status: 503 });
 
-  let body: { prompt?: unknown };
+  let form: FormData;
   try {
-    body = await request.json() as { prompt?: unknown };
+    form = await request.formData();
   } catch {
-    return Response.json({ error: "Enter a clothing image prompt." }, { status: 400 });
+    return Response.json({ error: "Enter a clothing prompt and optionally attach artwork." }, { status: 400 });
   }
 
-  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  const promptValue = form.get("prompt");
+  const prompt = typeof promptValue === "string" ? promptValue.trim() : "";
   if (!prompt || prompt.length > maximumPromptLength) {
     return Response.json({ error: `Write a prompt between 1 and ${maximumPromptLength} characters.` }, { status: 400 });
   }
 
+  const artworkValue = form.get("artwork");
+  const artwork = artworkValue instanceof File && artworkValue.size > 0 ? artworkValue : undefined;
+  if (artwork && artwork.size > maximumArtworkBytes) return Response.json({ error: "Artwork must be 8 MB or smaller." }, { status: 413 });
+  if (artwork && !acceptedArtworkTypes.includes(artwork.type)) return Response.json({ error: "Use JPG, PNG, or WebP artwork." }, { status: 415 });
+  const artworkDataUrl = artwork
+    ? `data:${artwork.type};base64,${Buffer.from(await artwork.arrayBuffer()).toString("base64")}`
+    : undefined;
+
   const productPhotoPrompt = [
-    "Create one photorealistic, premium ecommerce product photograph of a single streetwear garment. Follow the clothing specification exactly; do not add unrequested logos, text, graphics, accessories, or extra garments. Show the complete garment from the front, centered and clearly visible, with realistic fabric texture and construction. Use clean, neutral studio lighting and a simple dark navy-blue studio background. Square product-catalog composition.",
+    artworkDataUrl
+      ? "Create one photorealistic ecommerce product photo of a single streetwear garment. Use the attached artwork as the intended front print, preserving its colors, layout, lettering, and motifs as closely as possible. Place it centered on the garment chest and do not add other graphics. Show the full garment from the front with realistic fabric texture against a simple dark navy-blue studio background. Square catalog composition."
+      : "Create one photorealistic, premium ecommerce product photograph of a single streetwear garment. Follow the clothing specification exactly; do not add unrequested logos, text, graphics, accessories, or extra garments. Show the complete garment from the front, centered and clearly visible, with realistic fabric texture and construction. Use clean, neutral studio lighting and a simple dark navy-blue studio background. Square product-catalog composition.",
     `Clothing specification: ${prompt}`,
   ].join("\n\n");
+
+  const model = artworkDataUrl
+    ? process.env.VENICE_REFERENCE_IMAGE_MODEL || "krea-v2-large"
+    : process.env.VENICE_IMAGE_MODEL || "gpt-image-2-5-flare";
+  const imageRequestBody = {
+    model,
+    prompt: productPhotoPrompt,
+    aspect_ratio: "1:1",
+    format: "webp",
+    return_binary: false,
+    safe_mode: true,
+    ...(artworkDataUrl
+      ? { style_references: [{ image: artworkDataUrl, strength: 0.95 }] }
+      : { resolution: "1K" }),
+  };
 
   try {
     const response = await fetch("https://api.venice.ai/api/v1/image/generate", {
@@ -40,16 +68,8 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      signal: AbortSignal.timeout(55_000),
-      body: JSON.stringify({
-        model: process.env.VENICE_IMAGE_MODEL || "gpt-image-2-5-flare",
-        prompt: productPhotoPrompt,
-        aspect_ratio: "1:1",
-        resolution: "1K",
-        format: "webp",
-        return_binary: false,
-        safe_mode: true,
-      }),
+      signal: AbortSignal.timeout(44_000),
+      body: JSON.stringify(imageRequestBody),
     });
 
     if (!response.ok) {
@@ -81,7 +101,7 @@ export async function POST(request: Request) {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        signal: AbortSignal.timeout(12_000),
+        signal: AbortSignal.timeout(8_000),
         body: JSON.stringify({
           model: process.env.VENICE_TEXT_MODEL || "qwen3-5-9b",
           temperature: 0.3,
