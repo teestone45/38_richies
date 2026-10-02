@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { hasAdminSession, isSameOriginRequest } from "@/lib/admin-auth";
 import { getProducts, getStarterProducts } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
@@ -143,6 +144,8 @@ export async function POST(request: Request) {
       featured,
       active,
     });
+    revalidatePath("/");
+    revalidatePath(`/product/${slug}`);
     return Response.json({ productId: product._id }, { status: 201 });
   } catch (error) {
     console.error("Sanity product creation failed", error);
