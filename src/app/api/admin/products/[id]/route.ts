@@ -56,6 +56,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       update[field] = value;
     }
   }
+  if (has("colors")) {
+    const colorValue = raw("colors");
+    const colors = Array.isArray(colorValue)
+      ? colorValue.filter((color): color is string => typeof color === "string").map((color) => color.trim()).filter(Boolean)
+      : stringValue("colors").split(",").map((color) => color.trim()).filter(Boolean);
+    if (colors.length > 12 || colors.some((color) => color.length > 30)) return Response.json({ error: "Choose up to 12 valid colors for this product." }, { status: 400 });
+    update.colors = [...new Set(colors)];
+  }
   if (has("sizes")) {
     const sizeValue = raw("sizes");
     const sizes = Array.isArray(sizeValue)
@@ -143,6 +151,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         images: undefined,
         category: starter.category,
         badge: starter.badge,
+        ...(starter.colors?.length ? { colors: starter.colors } : {}),
         sizes: starter.sizes,
         dtfPlacement: starter.dtfPlacement,
         fabric: starter.fabric,
@@ -194,6 +203,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
           image: starter.image,
           category: starter.category,
           badge: starter.badge,
+          ...(starter.colors?.length ? { colors: starter.colors } : {}),
           sizes: starter.sizes,
           dtfPlacement: starter.dtfPlacement,
           fabric: starter.fabric,

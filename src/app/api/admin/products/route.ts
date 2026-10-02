@@ -12,6 +12,7 @@ const adminProductsQuery = `*[_type == "product"] | order(_createdAt desc) {
   "images": array::compact(images[].asset->url) + select(defined(image) => [image], []),
   category,
   badge,
+  colors,
   sizes,
   inventory,
   featured,
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
   const category = textField(form, "category");
   const badge = textField(form, "badge") || "NEW DROP";
   const description = textField(form, "description");
+  const colors = textField(form, "colors").split(",").map((color) => color.trim()).filter(Boolean);
   const sizes = textField(form, "sizes").split(",").map((size) => size.trim()).filter(Boolean);
   const inventory = textField(form, "stock").split(",").map((entry) => {
     const [size, quantity] = entry.split(":").map((value) => value.trim());
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
   const featured = form.get("featured") === "true";
   const images = [...form.getAll("images"), ...form.getAll("image")].filter((file): file is File => file instanceof File && file.size > 0);
 
-  if (!title || title.length > 120 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !Number.isFinite(price) || price <= 0 || price > 10000 || Number(price.toFixed(2)) !== price || !category || sizes.length === 0 || sizes.length > 12 || !["DTF", "DTG", "Embroidered"].includes(printMethod)) {
+  if (!title || title.length > 120 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !Number.isFinite(price) || price <= 0 || price > 10000 || Number(price.toFixed(2)) !== price || !category || sizes.length === 0 || sizes.length > 12 || colors.length > 12 || !["DTF", "DTG", "Embroidered"].includes(printMethod)) {
     return Response.json({ error: "Check the title, URL slug, price, category, and available sizes." }, { status: 400 });
   }
   if (images.length === 0) return Response.json({ error: "Choose at least one product photo to upload." }, { status: 400 });
@@ -132,6 +134,7 @@ export async function POST(request: Request) {
       images: assets.map((asset) => ({ _type: "image", asset: { _type: "reference", _ref: asset._id } })),
       category,
       badge,
+      ...(colors.length ? { colors } : {}),
       sizes,
       ...(inventory.length ? { inventory } : {}),
       dtfPlacement,

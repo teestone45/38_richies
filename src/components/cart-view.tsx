@@ -22,7 +22,7 @@ export default function CartView() {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })) }),
+        body: JSON.stringify({ items: items.map(({ productId, size, color, quantity }) => ({ productId, size, color: color ?? "Default", quantity })) }),
       });
       const result = await response.json() as { url?: string; error?: string };
       if (!response.ok || !result.url) throw new Error(result.error ?? "Checkout could not be started. Please try again.");
@@ -42,16 +42,16 @@ export default function CartView() {
         <>
           <ul className="cart-list">
             {items.map((item) => (
-              <li className="cart-row" key={`${item.productId}-${item.size}`}>
+              <li className="cart-row" key={`${item.productId}-${item.size}-${item.color ?? "Default"}`}>
                 <div className="cart-row__image" style={{ backgroundImage: `url("${item.image}")` }} role="img" aria-label={item.title} />
                 <div className="cart-row__info">
-                  <h2>{item.title}</h2><p>Size / {item.size} · {formatPrice(item.priceCents)}</p>
+                  <h2>{item.title}</h2><p>Color / {item.color ?? "Default"} · Size / {item.size} · {formatPrice(item.priceCents)}</p>
                   <div className="cart-row__actions" aria-label={`Quantity for ${item.title}`}>
-                    <button type="button" aria-label="Decrease quantity" onClick={() => setQuantity(item.productId, item.size, item.quantity - 1)}>−</button>
+                    <button type="button" aria-label="Decrease quantity" onClick={() => setQuantity(item.productId, item.size, item.quantity - 1, item.color)}>−</button>
                     <span>{item.quantity}</span>
-                    <button type="button" aria-label="Increase quantity" onClick={() => setQuantity(item.productId, item.size, Math.min(item.quantity + 1, 10))} disabled={item.quantity >= 10}>+</button>
+                    <button type="button" aria-label="Increase quantity" onClick={() => setQuantity(item.productId, item.size, Math.min(item.quantity + 1, 10), item.color)} disabled={item.quantity >= 10}>+</button>
                   </div>
-                  <button className="cart-row__remove" type="button" onClick={() => removeItem(item.productId, item.size)}>Remove</button>
+                  <button className="cart-row__remove" type="button" onClick={() => removeItem(item.productId, item.size, item.color)}>Remove</button>
                 </div>
                 <span className="cart-row__price">{formatPrice(item.priceCents * item.quantity)}</span>
               </li>

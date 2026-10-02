@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { getProductBySlug } from "@/lib/products";
 
 type CheckoutRequest = {
-  items?: { productId?: unknown; size?: unknown; quantity?: unknown }[];
+  items?: { productId?: unknown; size?: unknown; color?: unknown; quantity?: unknown }[];
 };
 
 export async function POST(request: Request) {
@@ -29,19 +29,23 @@ export async function POST(request: Request) {
       return Response.json({ error: "One or more items in your bag are invalid." }, { status: 400 });
     }
 
+    const selectedColor = typeof item.color === "string" && item.color.trim() ? item.color.trim() : "Default";
     const product = await getProductBySlug(item.productId);
     if (!product || !product.sizes.includes(item.size)) {
       return Response.json({ error: "One of the selected products or sizes is no longer available." }, { status: 400 });
     }
+    if (product.colors?.length && !product.colors.includes(selectedColor)) {
+      return Response.json({ error: `${product.title} does not offer the selected color.` }, { status: 400 });
+    }
     if (product.inventory && (product.inventory[item.size] ?? 0) < (item.quantity as number)) {
       return Response.json({ error: `${product.title} in size ${item.size} does not have enough stock.` }, { status: 409 });
     }
-    sessionMetadata[`item_${index}`] = `${product.slug}|${item.size}|${item.quantity}`;
+    sessionMetadata[`item_${index}`] = `${product.slug}|${item.size}|${selectedColor}|${item.quantity}`;
 
     lineItems.push({
       price_data: {
         currency: "usd",
-        product_data: { name: `${product.title} / ${item.size}`, metadata: { product_slug: product.slug, size: item.size } },
+        product_data: { name: `${product.title} / ${item.size} / ${selectedColor}`, metadata: { product_slug: product.slug, size: item.size, color: selectedColor } },
         unit_amount: product.priceCents,
       },
       quantity: item.quantity as number,

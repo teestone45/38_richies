@@ -16,6 +16,7 @@ type AdminProduct = {
   description: string;
   category: string;
   badge: string;
+  colors?: string[];
   dtfPlacement: string;
   fabric: string;
   printMethod: "DTF" | "DTG" | "Embroidered";
@@ -27,7 +28,7 @@ type AdminOrder = {
   _id: string;
   stripeSessionId: string;
   email: string;
-  items: { productId: string; title: string; size: string; quantity: number; unitAmount: number }[];
+  items: { productId: string; title: string; size: string; color?: string; quantity: number; unitAmount: number }[];
   amountTotal: number;
   currency: string;
   status: string;
@@ -182,7 +183,7 @@ export default function AdminDashboard() {
       const response = await fetch(`/api/admin/products/${encodeURIComponent(product._id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price: Number(product.priceValue), active: product.active, featured: product.featured, stock: product.inventory ? Object.entries(product.inventory).map(([size, quantity]) => ({ size, quantity })) : [] }),
+        body: JSON.stringify({ price: Number(product.priceValue), active: product.active, featured: product.featured, colors: product.colors ?? [], stock: product.inventory ? Object.entries(product.inventory).map(([size, quantity]) => ({ size, quantity })) : [] }),
       });
       const result = await readResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Could not save product changes.");
@@ -358,6 +359,7 @@ export default function AdminDashboard() {
           <label>Price (USD)<input name="price" type="number" required min="0.01" max="10000" step="0.01" placeholder="45.00" /></label>
           <label>Category<input name="category" required placeholder="Graphic tee" /></label>
           <label>Drop label<input name="badge" maxLength={32} placeholder="DROP 002" /></label>
+          <label>Available colors<input name="colors" defaultValue="Black, Cream" placeholder="Black, Cream" /></label>
           <label>Available sizes<input name="sizes" required defaultValue="XL, 2XL" placeholder="XL, 2XL" /></label>
           <label>Stock by size<input name="stock" placeholder="XL:4, 2XL:2" /><small>Leave blank to leave stock untracked.</small></label>
           <label className="admin-product-form__wide">Description<textarea name="description" rows={3} placeholder="Fabric, fit, print details..." /></label>
@@ -404,6 +406,7 @@ export default function AdminDashboard() {
                     <label>Category<input name="category" required maxLength={80} defaultValue={product.category} /></label>
                     <label>Drop label<input name="badge" maxLength={32} defaultValue={product.badge} /></label>
                     <label className="admin-product-form__wide">Description<textarea name="description" rows={3} maxLength={2000} defaultValue={product.description} /></label>
+                    <label>Available colors<input name="colors" defaultValue={product.colors?.join(", ") ?? ""} placeholder="Black, Cream" /></label>
                     <label>Available sizes<input name="sizes" required defaultValue={product.sizes.join(", ")} /></label>
                     <label>Stock by size<input name="stock" defaultValue={Object.entries(product.inventory ?? {}).map(([size, quantity]) => `${size}:${quantity}`).join(", ")} placeholder="XL:4, 2XL:2" /><small>Blank means untracked stock.</small></label>
                     <label>Print method<select name="printMethod" defaultValue={product.printMethod}><option>DTF</option><option>DTG</option><option>Embroidered</option></select></label>
@@ -426,7 +429,7 @@ export default function AdminDashboard() {
         {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Paid Stripe checkouts will appear here after the webhook is configured.</p> : <div className="admin-order-list">
           {orders.map((order) => <article className="admin-order-row" key={order._id}>
             <div className="admin-order-row__summary"><strong>{order.stripeSessionId.replace("cs_", "ORDER ").slice(0, 24)}</strong><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span><span>${(order.amountTotal / 100).toFixed(2)} {order.currency?.toUpperCase()}</span></div>
-            <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${index}`}>{item.quantity} × {item.title} / {item.size}</span>)}</div>
+            <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}</span>)}</div>
             <p className="admin-order-row__address">{order.shippingAddress}</p>
             <div className="admin-order-row__controls">
               <label>FULFILLMENT<select value={order.status} onChange={(event) => updateOrder(order, { status: event.target.value })}><option value="paid">Paid</option><option value="packing">Packing</option><option value="shipped">Shipped</option><option value="cancelled">Cancelled</option><option value="inventory_issue">Inventory issue</option></select></label>

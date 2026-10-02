@@ -17,6 +17,7 @@ export type Product = {
   category: string;
   badge: string;
   description: string;
+  colors?: string[];
   sizes: string[];
   dtfPlacement: string;
   fabric: string;
@@ -33,7 +34,7 @@ const fallbackProducts: Product[] = [
     images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1100&q=88"],
     category: "Graphic tee", badge: "DROP 001",
     description: "A heavyweight everyday layer with an oversized shape and a bold front graphic. Cut to sit easy, made to hold its shape.",
-    sizes: ["XL", "2XL"], dtfPlacement: "A3 front print, centered 3 inches below the collar.", fabric: "280 GSM cotton",
+    colors: ["Black", "Stone"], sizes: ["XL", "2XL"], dtfPlacement: "A3 front print, centered 3 inches below the collar.", fabric: "280 GSM cotton",
     printMethod: "DTF", artwork: { top: "38 RICHES", center: "38", bottom: "MOVE DIFFERENT / 001", palette: "ink" },
   },
   {
@@ -42,7 +43,7 @@ const fallbackProducts: Product[] = [
     images: ["https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1100&q=88"],
     category: "Graphic tee", badge: "SMALL RUN",
     description: "An oversized cotton tee for late starts and longer nights. A clean silhouette with a considered, durable finish.",
-    sizes: ["XL", "2XL"], dtfPlacement: "A3 front print, centered 3 inches below the collar.", fabric: "280 GSM cotton",
+    colors: ["Ink", "Cream"], sizes: ["XL", "2XL"], dtfPlacement: "A3 front print, centered 3 inches below the collar.", fabric: "280 GSM cotton",
     printMethod: "DTG", artwork: { top: "AFTER HOURS", center: "38", bottom: "STAY OUT A LITTLE LONGER", palette: "gold" },
   },
   {
@@ -51,7 +52,7 @@ const fallbackProducts: Product[] = [
     images: ["https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1100&q=88"],
     category: "Fleece", badge: "HEAVYWEIGHT",
     description: "A substantial fleece layer with room through the body and a soft brushed interior. Built for repeat wear.",
-    sizes: ["XL", "2XL"], dtfPlacement: "Front graphic, centered on chest.", fabric: "450 GSM cotton blend",
+    colors: ["Charcoal", "Sand"], sizes: ["XL", "2XL"], dtfPlacement: "Front graphic, centered on chest.", fabric: "450 GSM cotton blend",
     printMethod: "DTF", artwork: { top: "38 RICHES", center: "38", bottom: "HEAVY GOODS / 001", palette: "ink" },
   },
   {
@@ -60,7 +61,7 @@ const fallbackProducts: Product[] = [
     images: ["https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1100&q=88"],
     category: "Accessories", badge: "ONE SIZE",
     description: "A structured six-panel cap with an adjustable back and understated 38 RICHES branding.",
-    sizes: ["One size"], dtfPlacement: "Embroidered front mark.", fabric: "Cotton twill",
+    colors: ["Off White", "Black"], sizes: ["One size"], dtfPlacement: "Embroidered front mark.", fabric: "Cotton twill",
   },
 ];
 
@@ -132,6 +133,7 @@ const productProjection = `{
   "images": array::compact(images[].asset->url) + select(defined(image) => [image], []),
   category,
   badge,
+  colors,
   sizes,
   inventory,
   featured,
@@ -156,6 +158,7 @@ function normalizeProduct(product: SanityProduct): Product {
     category: product.category ?? "Streetwear",
     badge: product.badge ?? "38 RICHES",
     description: product.description ?? "A heavyweight essential, made to move different.",
+    colors: product.colors?.length ? product.colors : ["Default"],
     sizes: product.sizes?.length ? product.sizes : ["XL", "2XL"],
     dtfPlacement: product.dtfPlacement ?? "Front graphic, centered on chest.",
     fabric: product.fabric ?? "280 GSM cotton",

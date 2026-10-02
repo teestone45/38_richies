@@ -4,7 +4,7 @@ import { getSanityAdminClient } from "@/lib/sanity-admin";
 
 type StockVariant = { size: string; quantity: number };
 type SanityProduct = { _id: string; _rev: string; title: string; inventory?: StockVariant[] };
-type OrderLine = { productId: string; title: string; size: string; quantity: number; unitAmount: number };
+type OrderLine = { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number };
 
 export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -41,8 +41,11 @@ export async function POST(request: Request) {
     let inventoryIssue = false;
 
     for (let index = 0; index < itemCount; index += 1) {
-      const [slug, size, quantityText] = session.metadata?.[`item_${index}`]?.split("|") ?? [];
+      const raw = session.metadata?.[`item_${index}`] ?? "";
+      const parts = raw.split("|");
+      const [slug, size, colorValue, quantityText] = parts.length >= 4 ? parts : [parts[0], parts[1], "Default", parts[2]];
       const quantity = Number(quantityText);
+      const color = colorValue && colorValue.trim() ? colorValue.trim() : "Default";
       if (!slug || !size || !Number.isInteger(quantity) || quantity < 1) return Response.json({ error: "Checkout item metadata is invalid." }, { status: 400 });
 
       const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, inventory}`, { slug });
@@ -57,6 +60,7 @@ export async function POST(request: Request) {
         productId: slug,
         title,
         size,
+        color,
         quantity,
         unitAmount: typeof stripePrice === "object" && stripePrice ? stripePrice.unit_amount ?? 0 : 0,
       });

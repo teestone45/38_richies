@@ -4,7 +4,25 @@ import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import type { Product } from "@/lib/products";
 
+function getSwatchColor(color: string) {
+  const palette: Record<string, string> = {
+    black: "#111111",
+    stone: "#b8b0a7",
+    ink: "#20283a",
+    cream: "#f4efe7",
+    charcoal: "#2b2b2b",
+    sand: "#d9c4a1",
+    "off white": "#f5f0e8",
+    white: "#f5f0e8",
+    default: "#d4d4d4",
+  };
+
+  return palette[color.trim().toLowerCase()] ?? color;
+}
+
 export default function ProductDetail({ product }: { product: Product }) {
+  const colors = product.colors && product.colors.length > 0 ? product.colors : ["Default"];
+  const [selectedColor, setSelectedColor] = useState(colors[0]);
   const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
@@ -14,7 +32,7 @@ export default function ProductDetail({ product }: { product: Product }) {
 
   function addToBag() {
     if (outOfStock) return;
-    addItem(product, selectedSize);
+    addItem(product, selectedSize, selectedColor);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   }
@@ -34,6 +52,32 @@ export default function ProductDetail({ product }: { product: Product }) {
         <p className="product-info__subtitle">{product.fabric} / {product.printMethod ?? "Printed"} print / Oversized fit</p>
         <p className="product-info__price">${(product.priceCents / 100).toFixed(2)} <span className="muted">USD</span></p>
         <p className="product-info__description">{product.description}</p>
+        {colors.length > 0 && (
+          <>
+            <div className="size-label"><span>Select color</span></div>
+            <div className="size-options" role="group" aria-label="Choose color">
+              {colors.map((color) => (
+                <button
+                  className="size-option"
+                  type="button"
+                  key={color}
+                  aria-pressed={selectedColor === color}
+                  aria-label={color}
+                  title={color}
+                  onClick={() => setSelectedColor(color)}
+                  style={{
+                    backgroundColor: getSwatchColor(color),
+                    color: color.toLowerCase().includes("white") || color.toLowerCase().includes("cream") || color.toLowerCase().includes("stone") ? "#111111" : "#f5f5f5",
+                    borderColor: selectedColor === color ? "#111111" : "rgba(17, 17, 17, 0.2)",
+                  }}
+                >
+                  <span aria-hidden="true" style={{ display: "inline-block", width: 16, height: 16, borderRadius: "50%", backgroundColor: getSwatchColor(color), border: "1px solid rgba(17,17,17,0.15)" }} />
+                  {color}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <div className="size-label"><span>Select size</span><a href="#size-guide">Size guide</a></div>
         <div className="size-options" role="group" aria-label="Choose size">
           {product.sizes.map((size) => {
@@ -43,7 +87,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           })}
         </div>
         {selectedStock !== undefined && <p className="stock-note">{outOfStock ? "This size is currently sold out." : `${selectedStock} available in ${selectedSize}.`}</p>}
-        <p className="product-info__placement">{product.dtfPlacement} Size preview adjusts with your selection.</p>
+        <p className="product-info__placement">{product.dtfPlacement} Size and color preview adjust with your selection.</p>
         <button className="button button--lime add-button" type="button" onClick={addToBag} disabled={outOfStock}>
           {outOfStock ? "Sold out" : added ? "Added to bag" : "Add to bag"}<span aria-hidden="true">{added ? "✓" : "↗"}</span>
         </button>

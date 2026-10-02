@@ -11,6 +11,7 @@ const productSchema = {
     { name: "images", title: "Product images", type: "array", of: [{ type: "image", options: { hotspot: true } }] },
     { name: "category", title: "Category", type: "string" },
     { name: "badge", title: "Drop label", type: "string" },
+    { name: "colors", title: "Available colors", type: "array", of: [{ type: "string" }], options: { layout: "tags" } },
     { name: "sizes", title: "Available sizes", type: "array", of: [{ type: "string" }], options: { layout: "tags" } },
     {
       name: "inventory",
@@ -52,7 +53,7 @@ export const orderSchema = {
   fields: [
     { name: "stripeSessionId", title: "Stripe Checkout Session", type: "string" },
     { name: "email", title: "Customer email", type: "string" },
-    { name: "items", title: "Items", type: "array", of: [{ type: "object", fields: [{ name: "productId", type: "string" }, { name: "title", type: "string" }, { name: "size", type: "string" }, { name: "quantity", type: "number" }, { name: "unitAmount", type: "number" }] }] },
+    { name: "items", title: "Items", type: "array", of: [{ type: "object", fields: [{ name: "productId", type: "string" }, { name: "title", type: "string" }, { name: "size", type: "string" }, { name: "color", type: "string" }, { name: "quantity", type: "number" }, { name: "unitAmount", type: "number" }] }] },
     { name: "amountTotal", title: "Total (cents)", type: "number" },
     { name: "currency", title: "Currency", type: "string" },
     { name: "stripePaymentIntentId", title: "Stripe payment intent", type: "string" },
