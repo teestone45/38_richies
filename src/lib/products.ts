@@ -34,7 +34,7 @@ const fallbackProducts: Product[] = [
     images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1100&q=88"],
     category: "Graphic tee", badge: "DROP 001",
     description: "A heavyweight everyday layer with an oversized shape and a bold front graphic. Cut to sit easy, made to hold its shape.",
-    colors: ["Black", "Stone"], sizes: ["XL", "2XL"], dtfPlacement: "A3 front print, centered 3 inches below the collar.", fabric: "280 GSM cotton",
+    colors: ["Black", "White", "Heather Grey"], sizes: ["XL", "2XL"], dtfPlacement: "A3 front print, centered 3 inches below the collar.", fabric: "280 GSM cotton",
     printMethod: "DTF", artwork: { top: "38 RICHES", center: "38", bottom: "MOVE DIFFERENT / 001", palette: "ink" },
   },
   {

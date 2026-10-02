@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import type { Product } from "@/lib/products";
 
 function getSwatchColor(color: string) {
   const palette: Record<string, string> = {
     black: "#111111",
+    white: "#f5f0e8",
+    "heather grey": "#8d8d8d",
+    grey: "#8d8d8d",
+    gray: "#8d8d8d",
     stone: "#b8b0a7",
     ink: "#20283a",
     cream: "#f4efe7",
     charcoal: "#2b2b2b",
     sand: "#d9c4a1",
     "off white": "#f5f0e8",
-    white: "#f5f0e8",
     default: "#d4d4d4",
   };
 
@@ -21,14 +24,23 @@ function getSwatchColor(color: string) {
 }
 
 export default function ProductDetail({ product }: { product: Product }) {
-  const colors = product.colors && product.colors.length > 0 ? product.colors : ["Default"];
-  const [selectedColor, setSelectedColor] = useState(colors[0]);
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
+  const colors = product.colors && product.colors.length > 0 ? product.colors : ["Black", "White", "Heather Grey"];
+  const [selectedColor, setSelectedColor] = useState(colors[0] ?? "Black");
+  const [selectedSize, setSelectedSize] = useState(product.sizes[0] ?? "XL");
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
   const selectedStock = product.inventory?.[selectedSize];
   const outOfStock = selectedStock !== undefined && selectedStock < 1;
+
+  const variantImage = useMemo(() => {
+    const slug = product.slug.replace(/\s+/g, "-").toLowerCase();
+    const cleanColor = selectedColor.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const cleanSize = selectedSize.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    return `/images/${slug}-${cleanColor}-${cleanSize}.jpg`;
+  }, [product.slug, selectedColor, selectedSize]);
+
+  const previewImage = selectedImage > 0 ? product.images[selectedImage] ?? variantImage : variantImage;
 
   function addToBag() {
     if (outOfStock) return;
@@ -41,7 +53,15 @@ export default function ProductDetail({ product }: { product: Product }) {
     <>
       <div className="product-media">
         <div className={`product-stage product-stage--${selectedSize.replaceAll(" ", "-")}`}>
-          <div className="product-stage__image" style={{ backgroundImage: `url("${product.images[selectedImage] ?? product.image}")` }} role="img" aria-label={`${product.title} photo ${selectedImage + 1} of ${product.images.length}`} />
+          <img
+            className="product-stage__image"
+            src={previewImage}
+            alt={`${product.title} color ${selectedColor} size ${selectedSize}`}
+            onError={(event) => {
+              event.currentTarget.src = product.image;
+            }}
+            style={{ objectFit: "cover", width: "100%", height: "100%" }}
+          />
           <span className="product-stage__size">FIT PREVIEW / {selectedSize.toUpperCase()}</span>
         </div>
         {product.images.length > 1 && <div className="product-gallery" aria-label="Product images">{product.images.map((image, index) => <button type="button" className={index === selectedImage ? "product-gallery__image is-selected" : "product-gallery__image"} key={image} aria-label={`Show product photo ${index + 1}`} aria-pressed={index === selectedImage} style={{ backgroundImage: `url("${image}")` }} onClick={() => setSelectedImage(index)} />)}</div>}
@@ -87,7 +107,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           })}
         </div>
         {selectedStock !== undefined && <p className="stock-note">{outOfStock ? "This size is currently sold out." : `${selectedStock} available in ${selectedSize}.`}</p>}
-        <p className="product-info__placement">{product.dtfPlacement} Size and color preview adjust with your selection.</p>
+        <p className="product-info__placement">A3 DTF print fits perfectly on 2XL for the ultimate oversized look. Centered 3 inches below the collar. Size and color preview adjust with your selection.</p>
         <button className="button button--lime add-button" type="button" onClick={addToBag} disabled={outOfStock}>
           {outOfStock ? "Sold out" : added ? "Added to bag" : "Add to bag"}<span aria-hidden="true">{added ? "✓" : "↗"}</span>
         </button>
