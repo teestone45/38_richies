@@ -200,6 +200,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .admin-section__heading .eyebrow { margin-bottom: 7px; }
 .admin-section__heading h2 { margin: 0; font-family: var(--font-display); font-size: 35px; font-weight: 400; line-height: .95; }
 .admin-product-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.admin-product-form--studio { grid-template-columns: minmax(0, 1fr); }
 .admin-product-form textarea { min-height: 82px; resize: vertical; }
 .admin-product-form__wide { grid-column: span 2; }
 .admin-image-generator { display: grid; gap: 11px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
