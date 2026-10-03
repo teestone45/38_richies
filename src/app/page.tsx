@@ -56,6 +56,7 @@ export default async function Home() {
       <footer className="site-footer">
         <Link className="wordmark" href="/">38<span>R</span></Link>
         <p>© 2026 38 RICHES. MOVE DIFFERENT.</p>
+        <Link href="/track">TRACK ORDER</Link>
         <Link href="/admin">ADMIN</Link>
         <a href="mailto:hello@38riches.com">CONTACT ↗</a>
       </footer>

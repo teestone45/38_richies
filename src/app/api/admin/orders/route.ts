@@ -10,6 +10,8 @@ const ordersQuery = `*[_type == "order"] | order(createdAt desc) {
   items,
   amountTotal,
   currency,
+  couponCode,
+  discountAmount,
   status,
   shippingAddress,
   trackingNumber,

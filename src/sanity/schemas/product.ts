@@ -53,6 +53,8 @@ const productSchema = {
           { name: "rating", title: "Star rating", type: "number", validation: (rule: { required: () => { integer: () => { min: (value: number) => { max: (value: number) => unknown } } } }) => rule.required().integer().min(1).max(5) },
           { name: "comment", title: "Review", type: "text", rows: 4, validation: (rule: { required: () => unknown }) => rule.required() },
           { name: "createdAt", title: "Submitted at", type: "datetime" },
+          { name: "verifiedPurchase", title: "Verified purchase", type: "boolean", initialValue: false },
+          { name: "orderId", title: "Order document (internal)", type: "string" },
         ],
         preview: { select: { title: "customerName", subtitle: "rating" } },
       }],
@@ -69,10 +71,13 @@ export const orderSchema = {
     { name: "paymentProvider", title: "Payment provider", type: "string" },
     { name: "paymentReference", title: "Payment reference", type: "string" },
     { name: "paystackTransactionId", title: "Paystack transaction ID", type: "string" },
+    { name: "reviewedProductSlugs", title: "Reviewed products (internal)", type: "array", of: [{ type: "string" }] },
     { name: "stripeSessionId", title: "Stripe Checkout Session", type: "string" },
     { name: "email", title: "Customer email", type: "string" },
     { name: "items", title: "Items", type: "array", of: [{ type: "object", fields: [{ name: "productId", type: "string" }, { name: "title", type: "string" }, { name: "size", type: "string" }, { name: "color", type: "string" }, { name: "quantity", type: "number" }, { name: "unitAmount", type: "number" }] }] },
     { name: "amountTotal", title: "Total (minor units)", type: "number" },
+    { name: "couponCode", title: "Discount code", type: "string" },
+    { name: "discountAmount", title: "Discount (minor units)", type: "number" },
     { name: "currency", title: "Currency", type: "string" },
     { name: "stripePaymentIntentId", title: "Stripe payment intent", type: "string" },
     { name: "status", title: "Fulfillment status", type: "string", options: { list: ["paid", "packing", "shipped", "cancelled", "inventory_issue"] } },
@@ -81,6 +86,43 @@ export const orderSchema = {
     { name: "createdAt", title: "Created at", type: "datetime" },
     { name: "emailNotifiedAt", title: "Confirmation email sent at", type: "datetime" },
   ],
+};
+
+export const couponSchema = {
+  name: "coupon",
+  title: "Discount code",
+  type: "document",
+  fields: [
+    { name: "code", title: "Code", type: "string", validation: (rule: { required: () => unknown }) => rule.required() },
+    { name: "discountType", title: "Discount type", type: "string", options: { list: [{ title: "Percentage", value: "percentage" }, { title: "Fixed GHS amount", value: "fixed" }] }, validation: (rule: { required: () => unknown }) => rule.required() },
+    { name: "discountValue", title: "Discount value", type: "number", validation: (rule: { required: () => { positive: () => unknown } }) => rule.required().positive() },
+    { name: "active", title: "Active", type: "boolean", initialValue: true },
+    { name: "usageCount", title: "Times used", type: "number", initialValue: 0 },
+    { name: "maxUses", title: "Maximum uses", type: "number", validation: (rule: { integer: () => { min: (value: number) => unknown } }) => rule.integer().min(1) },
+    { name: "startsAt", title: "Starts at", type: "datetime" },
+    { name: "expiresAt", title: "Expires at", type: "datetime" },
+  ],
+  preview: { select: { title: "code", subtitle: "discountType" } },
+};
+
+export const restockAlertSchema = {
+  name: "restockAlert",
+  title: "Restock alert",
+  type: "document",
+  fields: [
+    { name: "email", title: "Customer email", type: "string" },
+    { name: "productSlug", title: "Product slug", type: "string" },
+    { name: "productTitle", title: "Product title", type: "string" },
+    { name: "size", title: "Size", type: "string" },
+    { name: "active", title: "Awaiting restock", type: "boolean", initialValue: false },
+    { name: "verified", title: "Email verified", type: "boolean", initialValue: false },
+    { name: "confirmedAt", title: "Confirmed at", type: "datetime" },
+    { name: "tokenHash", title: "Confirmation token hash", type: "string" },
+    { name: "tokenExpiresAt", title: "Confirmation expires at", type: "datetime" },
+    { name: "createdAt", title: "Subscribed at", type: "datetime" },
+    { name: "notifiedAt", title: "Notified at", type: "datetime" },
+  ],
+  preview: { select: { title: "productTitle", subtitle: "size" } },
 };
 
 export default productSchema;

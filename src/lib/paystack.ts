@@ -3,7 +3,15 @@ import { getProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
 type PaystackCartItem = { slug: string; size: string; color: string; quantity: number; unitAmount: number };
-type PaystackMetadata = { items?: PaystackCartItem[]; shippingAddress?: string; customerName?: string };
+type PaystackMetadata = {
+  items?: PaystackCartItem[];
+  shippingAddress?: string;
+  customerName?: string;
+  discountAmount?: number;
+  shippingAmount?: number;
+  couponId?: string;
+  couponCode?: string;
+};
 type PaystackTransaction = {
   id: number;
   reference: string;
@@ -56,7 +64,15 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
     items.push(item);
     subtotal += item.unitAmount * item.quantity;
   }
-  const expectedAmount = subtotal + (subtotal >= 10000 ? 0 : 800);
+  const discountAmount = metadata?.discountAmount ?? 0;
+  const expectedShipping = subtotal - discountAmount >= 10000 ? 0 : 800;
+  const shippingAmount = metadata?.shippingAmount ?? expectedShipping;
+  const couponId = metadata?.couponId ?? "";
+  const couponCode = metadata?.couponCode ?? "";
+  if (!Number.isInteger(discountAmount) || discountAmount < 0 || discountAmount > subtotal || !Number.isInteger(shippingAmount) || shippingAmount !== expectedShipping || (discountAmount > 0 && !couponId)) {
+    throw new Error("Paystack discount or shipping metadata is invalid.");
+  }
+  const expectedAmount = subtotal - discountAmount + shippingAmount;
   if (!Number.isInteger(transaction.amount) || transaction.amount !== expectedAmount) throw new Error("Paystack transaction amount does not match the order.");
 
   const orderId = `order-${transaction.reference}`;
@@ -107,6 +123,8 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
     items: orderItems,
     amountTotal: transaction.amount,
     currency: transaction.currency,
+    ...(couponCode ? { couponCode } : {}),
+    discountAmount,
     status: inventoryIssue ? "inventory_issue" : "paid",
     shippingAddress: metadata?.shippingAddress ?? "",
     trackingNumber: "",
@@ -120,6 +138,7 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
         transactionWrite = transactionWrite.patch(sanity.patch(update.id).ifRevisionId(update.revision).set({ inventory: update.inventory }));
       }
     }
+    if (couponId && !inventoryIssue) transactionWrite = transactionWrite.patch(sanity.patch(couponId).inc({ usageCount: 1 }));
     await transactionWrite.commit();
   } catch (error) {
     const duplicate = await sanity.fetch<{ _id: string } | null>(`*[_type == "order" && _id == $id][0]{_id}`, { id: orderId }).catch(() => null);

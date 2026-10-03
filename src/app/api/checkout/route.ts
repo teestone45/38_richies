@@ -1,14 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { isSameOriginRequest } from "@/lib/admin-auth";
-import { getProductBySlug } from "@/lib/products";
+import { priceCheckoutCart } from "@/lib/checkout-pricing";
+import { calculateDiscount } from "@/lib/discounts";
 
 type CheckoutRequest = {
-  items?: { productId?: unknown; size?: unknown; color?: unknown; quantity?: unknown }[];
+  items?: unknown;
   customer?: { email?: unknown; name?: unknown; phone?: unknown; address?: unknown; city?: unknown; region?: unknown };
+  discountCode?: unknown;
 };
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "Invalid request origin." }, { status: 403 });
+  if (Number(request.headers.get("content-length") ?? 0) > 16_384) return Response.json({ error: "Checkout request is too large." }, { status: 413 });
 
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
   if (!secretKey) {
@@ -22,9 +25,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid checkout request." }, { status: 400 });
   }
 
-  if (!body || !Array.isArray(body.items) || body.items.length === 0 || body.items.length > 20) {
-    return Response.json({ error: "Your bag is empty or contains too many line items." }, { status: 400 });
-  }
+  if (!body || typeof body !== "object") return Response.json({ error: "Invalid checkout request." }, { status: 400 });
 
   const customer = body.customer;
   const email = typeof customer?.email === "string" ? customer.email.trim().toLowerCase() : "";
@@ -37,37 +38,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "Enter a valid email, contact number, and complete Ghana delivery address." }, { status: 400 });
   }
 
-  const items: { slug: string; size: string; color: string; quantity: number; unitAmount: number }[] = [];
-  let subtotal = 0;
-  for (const item of body.items) {
-    if (!item || typeof item.productId !== "string" || typeof item.size !== "string" || !Number.isInteger(item.quantity) || (item.quantity as number) < 1 || (item.quantity as number) > 10) {
-      return Response.json({ error: "One or more items in your bag are invalid." }, { status: 400 });
-    }
-
-    const selectedColor = typeof item.color === "string" && item.color.trim() ? item.color.trim() : "Default";
-    const product = await getProductBySlug(item.productId);
-    if (!product || !product.sizes.includes(item.size)) {
-      return Response.json({ error: "One of the selected products or sizes is no longer available." }, { status: 400 });
-    }
-    if (product.colors?.length && !product.colors.includes(selectedColor)) {
-      return Response.json({ error: `${product.title} does not offer the selected color.` }, { status: 400 });
-    }
-    if (product.inventory && (product.inventory[item.size] ?? 0) < (item.quantity as number)) {
-      return Response.json({ error: `${product.title} in size ${item.size} does not have enough stock.` }, { status: 409 });
-    }
-    items.push({
-      slug: product.slug,
-      size: item.size,
-      color: selectedColor,
-      quantity: item.quantity as number,
-      unitAmount: product.priceCents,
-    });
-    subtotal += product.priceCents * (item.quantity as number);
-  }
-
   try {
+    const pricing = await priceCheckoutCart(body.items);
+    if (!pricing.ok) return Response.json({ error: pricing.error }, { status: pricing.status });
+    if (body.discountCode !== undefined && typeof body.discountCode !== "string") return Response.json({ error: "Invalid discount code." }, { status: 400 });
+    const discountCode = typeof body.discountCode === "string" ? body.discountCode.trim() : "";
+    const discount = discountCode ? await calculateDiscount(discountCode, pricing.subtotal) : undefined;
+    if (discount && !discount.valid) return Response.json({ error: discount.error }, { status: 400 });
+    const discountAmount = discount?.valid ? discount.discountAmount : 0;
+    const discountedSubtotal = pricing.subtotal - discountAmount;
     const origin = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? request.url).origin;
-    const shipping = subtotal >= 10000 ? 0 : 800;
+    const shipping = discountedSubtotal >= 10000 ? 0 : 800;
     const shippingAddress = [name, phone, address, city, region, "Ghana"].join("\n");
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -77,11 +58,20 @@ export async function POST(request: Request) {
         first_name: name.split(/\s+/)[0],
         last_name: name.split(/\s+/).slice(1).join(" "),
         phone,
-        amount: String(subtotal + shipping),
+        amount: String(discountedSubtotal + shipping),
         currency: "GHS",
         reference: `38r-${randomUUID()}`,
         callback_url: `${origin}/success`,
-        metadata: JSON.stringify({ items, shippingAddress, customerName: name }),
+        metadata: JSON.stringify({
+          items: pricing.items,
+          shippingAddress,
+          customerName: name,
+          subtotal: pricing.subtotal,
+          shippingAmount: shipping,
+          discountAmount,
+          couponId: discount?.valid ? discount.couponId : "",
+          couponCode: discount?.valid ? discount.code : "",
+        }),
       }),
     });
 

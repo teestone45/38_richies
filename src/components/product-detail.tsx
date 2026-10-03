@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/currency";
 import type { Product } from "@/lib/products";
@@ -25,7 +25,7 @@ function getSwatchColor(color: string) {
   return palette[color.trim().toLowerCase()] ?? color;
 }
 
-export default function ProductDetail({ product }: { product: Product }) {
+export default function ProductDetail({ product, restockConfirmed = false }: { product: Product; restockConfirmed?: boolean }) {
   const colors = product.colors && product.colors.length > 0 ? product.colors : ["Black", "White", "Heather Grey"];
   const [selectedColor, setSelectedColor] = useState(colors[0] ?? "Black");
   const [selectedSize, setSelectedSize] = useState(product.sizes[0] ?? "XL");
@@ -33,6 +33,9 @@ export default function ProductDetail({ product }: { product: Product }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
   const [addedQuantity, setAddedQuantity] = useState(1);
+  const [restockEmail, setRestockEmail] = useState("");
+  const [restockMessage, setRestockMessage] = useState(restockConfirmed ? "Email confirmed. We'll notify you when this size is back." : "");
+  const [isRequestingRestock, setIsRequestingRestock] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
   const quantityInBag = useCartStore((state) => state.items.find((item) => item.productId === product.slug && item.size === selectedSize && (item.color ?? "Default") === selectedColor)?.quantity ?? 0);
   const selectedStock = product.inventory?.[selectedSize];
@@ -55,6 +58,27 @@ export default function ProductDetail({ product }: { product: Product }) {
     addItem(product, selectedSize, selectedColor, quantityToAdd);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
+  }
+
+  async function requestRestockAlert(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsRequestingRestock(true);
+    setRestockMessage("");
+    try {
+      const response = await fetch(`/api/products/${encodeURIComponent(product.slug)}/restock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: restockEmail, size: selectedSize }),
+      });
+      const result = await response.json() as { message?: string; error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Could not request a restock alert.");
+      setRestockMessage(result.message ?? "Check your email to confirm the restock alert.");
+      setRestockEmail("");
+    } catch (error) {
+      setRestockMessage(error instanceof Error ? error.message : "Could not request a restock alert.");
+    } finally {
+      setIsRequestingRestock(false);
+    }
   }
 
   return (
@@ -115,6 +139,11 @@ export default function ProductDetail({ product }: { product: Product }) {
           })}
         </div>
         {selectedStock !== undefined && <p className="stock-note">{outOfStock ? "This size is currently sold out." : maxAddQuantity === 0 ? "The available quantity is already in your bag." : `${maxAddQuantity} more available in ${selectedSize}.`}</p>}
+        {outOfStock && <form className="restock-form" onSubmit={requestRestockAlert}>
+          <label htmlFor="restock-email">Get an email when {selectedSize} returns<input id="restock-email" type="email" required autoComplete="email" value={restockEmail} onChange={(event) => setRestockEmail(event.target.value)} /></label>
+          <button type="submit" disabled={isRequestingRestock}>{isRequestingRestock ? "Sending..." : "Notify me"}</button>
+          {restockMessage && <p role="status">{restockMessage}</p>}
+        </form>}
         <div className="product-quantity">
           <span>Quantity</span>
           <div className="quantity-stepper" role="group" aria-label="Choose quantity">

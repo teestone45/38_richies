@@ -14,6 +14,7 @@ export type ProductReview = {
   rating: number;
   comment: string;
   createdAt: string;
+  verifiedPurchase?: boolean;
 };
 
 export type Product = {
@@ -154,6 +155,7 @@ const productProjection = `{
   printMethod,
   artwork,
   reviews[]{_key, customerName, rating, comment, createdAt},
+    reviews[]{_key, customerName, rating, comment, createdAt, verifiedPurchase},
   "active": active != false,
   "removed": removed == true
 }`;

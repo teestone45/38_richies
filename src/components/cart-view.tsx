@@ -15,11 +15,44 @@ export default function CartView() {
   const [checkoutError, setCheckoutError] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryInfo, setDeliveryInfo] = useState({ email: "", name: "", phone: "", address: "", city: "", region: "" });
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; discountAmount: number; shippingAmount: number; total: number; cartKey: string } | null>(null);
+  const [discountMessage, setDiscountMessage] = useState("");
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   const subtotal = items.reduce((total, item) => total + item.priceCents * item.quantity, 0);
   const shipping = subtotal >= 10000 ? 0 : 800;
+  const cartKey = JSON.stringify(items.map((item) => [item.productId, item.size, item.color, item.quantity]));
+  const activeDiscount = appliedDiscount?.cartKey === cartKey && appliedDiscount.code === discountCode.trim().toUpperCase() ? appliedDiscount : null;
+
+  async function applyDiscount() {
+    if (!discountCode.trim()) return;
+    setIsApplyingDiscount(true);
+    setDiscountMessage("");
+    setAppliedDiscount(null);
+    try {
+      const response = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: discountCode, items: items.map(({ productId, size, color, quantity }) => ({ productId, size, color, quantity })) }),
+      });
+      const result = await response.json() as { code?: string; discountAmount?: number; shippingAmount?: number; total?: number; error?: string };
+      if (!response.ok || !result.code || result.discountAmount === undefined || result.total === undefined || result.shippingAmount === undefined) throw new Error(result.error ?? "Could not apply this discount code.");
+      setDiscountCode(result.code);
+      setAppliedDiscount({ code: result.code, discountAmount: result.discountAmount, shippingAmount: result.shippingAmount, total: result.total, cartKey });
+      setDiscountMessage(`${result.code} applied.`);
+    } catch (error) {
+      setDiscountMessage(error instanceof Error ? error.message : "Could not apply this discount code.");
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  }
 
   async function beginCheckout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (discountCode.trim() && !activeDiscount) {
+      setCheckoutError("Apply the discount code again before checkout.");
+      return;
+    }
     setIsCheckingOut(true);
     setCheckoutError("");
     try {
@@ -29,6 +62,7 @@ export default function CartView() {
         body: JSON.stringify({
           items: items.map(({ productId, size, color, quantity }) => ({ productId, size, color: color ?? "Default", quantity })),
           customer: deliveryInfo,
+          discountCode: activeDiscount?.code ?? "",
         }),
       });
       const result = await response.json() as { url?: string; error?: string };
@@ -76,9 +110,15 @@ export default function CartView() {
                 <label>Region<input type="text" autoComplete="address-level1" maxLength={80} required value={deliveryInfo.region} onChange={(event) => setDeliveryInfo((current) => ({ ...current, region: event.target.value }))} /></label>
               </div>
             </fieldset>
+            <div className="cart-discount">
+              <label htmlFor="cart-discount-code">Discount code<input id="cart-discount-code" type="text" autoComplete="off" maxLength={24} value={discountCode} onChange={(event) => { setDiscountCode(event.target.value.toUpperCase()); setAppliedDiscount(null); setDiscountMessage(""); }} placeholder="ENTER CODE" /></label>
+              <button type="button" onClick={applyDiscount} disabled={isApplyingDiscount || !discountCode.trim()}>{isApplyingDiscount ? "Checking..." : activeDiscount ? "Applied" : "Apply"}</button>
+              {discountMessage && <p role="status">{discountMessage}</p>}
+            </div>
             <p className="cart-summary__line"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></p>
-            <p className="cart-summary__line"><span>Shipping</span><span>{shipping ? formatPrice(shipping) : "Complimentary"}</span></p>
-            <p className="cart-summary__line cart-summary__line--total"><span>Total</span><span>{formatPrice(subtotal + shipping)}</span></p>
+            {activeDiscount && <p className="cart-summary__line"><span>Discount ({activeDiscount.code})</span><span>−{formatPrice(activeDiscount.discountAmount)}</span></p>}
+            <p className="cart-summary__line"><span>Shipping</span><span>{(activeDiscount?.shippingAmount ?? shipping) ? formatPrice(activeDiscount?.shippingAmount ?? shipping) : "Complimentary"}</span></p>
+            <p className="cart-summary__line cart-summary__line--total"><span>Total</span><span>{formatPrice(activeDiscount?.total ?? subtotal + shipping)}</span></p>
             <p className="cart-summary__shipping">Shipping is added securely at checkout. Complimentary Ghana shipping over GH₵100.</p>
             <button className="button button--lime" type="submit" disabled={isCheckingOut}>
               {isCheckingOut ? "Opening Paystack checkout..." : "Pay securely with Paystack"}<span aria-hidden="true">↗</span>

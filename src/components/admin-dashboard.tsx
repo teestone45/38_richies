@@ -35,6 +35,8 @@ type AdminOrder = {
   items: { productId: string; title: string; size: string; color?: string; quantity: number; unitAmount: number }[];
   amountTotal: number;
   currency: string;
+  couponCode?: string;
+  discountAmount?: number;
   status: string;
   shippingAddress: string;
   trackingNumber: string;
@@ -558,7 +560,7 @@ export default function AdminDashboard() {
     <main className="admin-page">
       <div className="admin-topline">
         <div><p className="eyebrow">38 RICHES / CONTROL ROOM</p><h1>THE DROP.</h1></div>
-        <div className="admin-topline__actions"><Link href="/">View storefront ↗</Link><button type="button" onClick={signOut}>Sign out</button></div>
+        <div className="admin-topline__actions"><Link href="/admin/discounts">Discount codes ↗</Link><Link href="/">View storefront ↗</Link><button type="button" onClick={signOut}>Sign out</button></div>
       </div>
       {error && <p className="admin-alert" role="alert">{error}</p>}
       {notice && <p className="admin-notice" role="status">{notice}</p>}
@@ -680,7 +682,7 @@ export default function AdminDashboard() {
         <div className="admin-section__heading"><div><p className="eyebrow">PAYMENTS / FULFILLMENT</p><h2 id="orders-title">ORDERS</h2></div><span>{orders.length} ORDERS</span></div>
         {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Verified Paystack payments will appear here after the webhook is configured.</p> : <div className="admin-order-list">
           {orders.map((order) => <article className="admin-order-row" key={order._id}>
-            <div className="admin-order-row__summary"><strong>{(order.paymentReference ?? order.stripeSessionId ?? order._id).replace(/^cs_/, "ORDER ").slice(0, 24)}</strong><span>{(order.paymentProvider ?? "stripe").toUpperCase()}</span><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span><span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
+            <div className="admin-order-row__summary"><strong>{(order.paymentReference ?? order.stripeSessionId ?? order._id).replace(/^cs_/, "ORDER ").slice(0, 24)}</strong><span>{(order.paymentProvider ?? "stripe").toUpperCase()}</span><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span>{order.couponCode && <span>{order.couponCode} · −{formatCurrency((order.discountAmount ?? 0) / 100)}</span>}<span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
             <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}</span>)}</div>
             <p className="admin-order-row__address">{order.shippingAddress}</p>
             <div className="admin-order-row__controls">

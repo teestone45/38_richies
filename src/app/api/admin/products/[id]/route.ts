@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { hasAdminSession, isSameOriginRequest } from "@/lib/admin-auth";
 import { getStarterProductBySlug } from "@/lib/products";
+import { notifyRestockSubscribers } from "@/lib/restock";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
 function formText(form: FormData, name: string) {
@@ -117,8 +118,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const starter = localSlug ? getStarterProductBySlug(localSlug) : undefined;
     if (localSlug && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
     const existing = localSlug
-      ? await client.fetch<{ _id: string; slug: string; sizes?: string[] } | null>(`*[_type == "product" && slug.current == $slug && removed != true][0]{_id, "slug": slug.current, sizes}`, { slug: localSlug })
-      : await client.fetch<{ _id: string; slug: string; sizes?: string[] } | null>(`*[_type == "product" && _id == $id][0]{_id, "slug": slug.current, sizes}`, { id });
+      ? await client.fetch<{ _id: string; slug: string; sizes?: string[]; active?: boolean; inventory?: { size: string; quantity: number }[] } | null>(`*[_type == "product" && slug.current == $slug && removed != true][0]{_id, "slug": slug.current, sizes, active, inventory}`, { slug: localSlug })
+      : await client.fetch<{ _id: string; slug: string; sizes?: string[]; active?: boolean; inventory?: { size: string; quantity: number }[] } | null>(`*[_type == "product" && _id == $id][0]{_id, "slug": slug.current, sizes, active, inventory}`, { id });
     if (!existing && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
     if (stockUpdate) {
       const allowedSizes = (update.sizes as string[] | undefined) ?? existing?.sizes ?? starter?.sizes;
@@ -164,6 +165,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         removed: false,
       };
       await client.create({ ...starterDocument, ...update, _id: targetId, _type: "product" });
+    }
+    if (stockUpdate || update.active === true) {
+      const previousInventory = existing?.inventory ?? Object.entries(starter?.inventory ?? {}).map(([size, quantity]) => ({ size, quantity }));
+      const productSlug = existing?.slug ?? starter?.slug;
+      const isLive = update.active === true || (update.active === undefined && existing?.active !== false);
+      if (productSlug && isLive) {
+        const nextInventory = stockUpdate ?? previousInventory;
+        const restockedSizes = nextInventory.filter((entry) => entry.quantity > 0 && (update.active === true || (previousInventory.find((variant) => variant.size === entry.size)?.quantity ?? 0) < 1));
+        for (const entry of restockedSizes) {
+          try {
+            await notifyRestockSubscribers(productSlug, entry.size);
+          } catch (notificationError) {
+            console.error("Restock subscribers could not be notified", notificationError);
+          }
+        }
+      }
     }
     revalidatePath("/");
     revalidatePath("/product/[slug]", "page");

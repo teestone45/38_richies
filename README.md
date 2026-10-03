@@ -16,7 +16,7 @@ Open <http://localhost:3000>. The built-in catalog works without Sanity. Persist
 
 Open <http://localhost:3000/admin>. The dashboard supports product search, multi-select Live/Draft/Featured actions, detail/price edits, per-size stock, up to eight product photos, order status, and tracking numbers.
 
-Create a Sanity project and dataset. Add both the default export from `src/sanity/schemas/product.ts` and its `orderSchema` named export to your Studio schema types, then configure these server-only values in `.env.local` and in the deployment environment:
+Create a Sanity project and dataset. Add the default product export and named `orderSchema`, `couponSchema`, and `restockAlertSchema` exports from `src/sanity/schemas/product.ts` to your Studio schema types, then configure these server-only values in `.env.local` and in the deployment environment:
 
 - `NEXT_PUBLIC_SANITY_PROJECT_ID`
 - `NEXT_PUBLIC_SANITY_DATASET`
@@ -30,7 +30,11 @@ Stock is untracked until you enter a quantity for every available size, e.g. `M:
 
 Product photos support JPG, PNG, and WebP, up to eight images per product and 8 MB per file. Featured products sort before the rest of the catalog.
 
-Customer reviews are stored on each product in Sanity. Add the updated product schema to Sanity Studio to view review entries there; the storefront accepts a customer name, 1–5 star rating, and written review, then displays the saved review and product average.
+Customer reviews are stored on each product in Sanity. Add the updated product and order schemas to Sanity Studio to view reviews and the internal reviewed-product marker. Customers must provide their paid order reference and checkout email; the server verifies the purchased product and accepts one review per product per order.
+
+Create and activate promotion codes at `/admin/discounts`. Codes can be percentage or fixed GHS discounts, with optional start/end dates and a maximum redemption count. The cart previews the discount, and checkout recalculates prices, stock, coupon validity, and final amount on the server. Coupon usage is incremented only after Paystack verifies payment.
+
+Customers can look up an order at `/track` with the payment reference and checkout email. Sold-out tracked sizes offer a restock alert; customers must confirm the email address before it is subscribed. Restock emails are sent after admin stock changes from zero to positive and require `RESEND_API_KEY`, `ORDER_EMAIL_FROM`, and `NEXT_PUBLIC_SITE_URL`.
 
 Selecting the first photo in the new-product form can draft a title, URL slug, category, colors, and description with OpenAI vision. Set the server-only `OPENAI_API_KEY` locally and in Vercel to enable it; optionally set `OPENAI_VISION_MODEL` (defaults to `gpt-4o-mini`). Review all suggestions and enter price, fabric, and stock yourself before uploading. AI drafting does not publish products; publishing still requires the Sanity write configuration above and an explicit form submission.
 
@@ -52,7 +56,7 @@ Keep using Paystack test keys until a full test checkout, callback, webhook, ord
 
 The app sends anti-framing, MIME-sniffing, referrer, permissions, and restrictive CSP directives. Vercel currently supplies HSTS for the production domain. State-changing browser requests require a same-origin `Origin` header; payment webhooks require Paystack's HMAC signature and then server-side transaction verification.
 
-In Vercel Firewall, add per-IP rate limits for `POST /api/admin/session` (for example, 5 attempts per 15 minutes), `POST /api/products/*/reviews` (for example, 10 per hour), and `POST /api/checkout` (for example, 20 per 10 minutes). Tune these thresholds for real traffic. This edge-level control is important because in-memory rate limits do not reliably span serverless instances. Public reviews are not purchase-verified, so monitor them and moderate/remove abuse in Sanity.
+In Vercel Firewall, add per-IP rate limits for `POST /api/admin/session` (for example, 5 attempts per 15 minutes), `POST /api/products/*/reviews` (10 per hour), `POST /api/products/*/restock` (10 per hour), `POST /api/orders/track` (20 per 10 minutes), and `POST /api/checkout` (20 per 10 minutes). Tune these thresholds for real traffic. This edge-level control is important because in-memory rate limits do not reliably span serverless instances. Purchase verification reduces review spam, but review content should still be monitored and moderated in Sanity.
 
 Keep `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, Sanity tokens, and `PAYSTACK_SECRET_KEY` server-only in Vercel Environment Variables. Use a unique strong admin password and a randomly generated session secret of at least 32 bytes; rotate credentials promptly if exposed.
 

@@ -12,6 +12,8 @@ function ReviewStars({ rating }: { rating: number }) {
 export default function ProductReviews({ productSlug, reviews: initialReviews }: { productSlug: string; reviews: ProductReview[] }) {
   const [reviews, setReviews] = useState(initialReviews);
   const [customerName, setCustomerName] = useState("");
+  const [email, setEmail] = useState("");
+  const [orderReference, setOrderReference] = useState("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,12 +29,14 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
       const response = await fetch(`/api/products/${encodeURIComponent(productSlug)}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerName, rating, comment, website: formData.get("website") }),
+        body: JSON.stringify({ customerName, email, orderReference, rating, comment, website: formData.get("website") }),
       });
       const result = await response.json() as { review?: ProductReview; error?: string };
       if (!response.ok || !result.review) throw new Error(result.error ?? "Could not submit your review.");
       setReviews((current) => [result.review!, ...current]);
       setCustomerName("");
+      setEmail("");
+      setOrderReference("");
       setRating(5);
       setComment("");
       setMessage("Thanks for sharing your review.");
@@ -57,7 +61,7 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
           {reviews.length ? reviews.map((review) => (
             <article className="product-review" key={review._key}>
               <div className="product-review__byline"><strong>{review.customerName}</strong><time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleDateString("en-GH", { year: "numeric", month: "short", day: "numeric" })}</time></div>
-              <ReviewStars rating={review.rating} />
+              <div className="product-review__rating"><ReviewStars rating={review.rating} />{review.verifiedPurchase && <span>VERIFIED PURCHASE</span>}</div>
               <p>{review.comment}</p>
             </article>
           )) : <p className="product-reviews__empty">No reviews yet. Be the first to share your thoughts.</p>}
@@ -66,6 +70,8 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
         <form className="product-review-form" onSubmit={submitReview}>
           <p className="eyebrow">LEAVE A REVIEW</p>
           <label>Your name<input type="text" required minLength={2} maxLength={60} autoComplete="name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
+          <label>Checkout email<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <label>Order reference<input type="text" required minLength={5} maxLength={128} autoComplete="off" value={orderReference} onChange={(event) => setOrderReference(event.target.value)} /></label>
           <fieldset>
             <legend>Your rating</legend>
             <div className="product-review-form__rating" role="group" aria-label="Choose a star rating">
