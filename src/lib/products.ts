@@ -8,6 +8,14 @@ export type ProductArtwork = {
   palette: string;
 };
 
+export type ProductReview = {
+  _key: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+};
+
 export type Product = {
   slug: string;
   title: string;
@@ -26,6 +34,7 @@ export type Product = {
   inventory?: Record<string, number>;
   featured?: boolean;
   createdAt?: string;
+  reviews?: ProductReview[];
 };
 
 const fallbackProducts: Product[] = [
@@ -144,6 +153,7 @@ const productProjection = `{
   fabric,
   printMethod,
   artwork,
+  reviews[]{_key, customerName, rating, comment, createdAt},
   "active": active != false,
   "removed": removed == true
 }`;
@@ -170,6 +180,7 @@ function normalizeProduct(product: SanityProduct): Product {
     inventory: product.inventory?.length ? product.inventory.reduce((stock, variant) => ({ ...stock, [variant.size]: variant.quantity }), {}) : undefined,
     featured: product.featured ?? false,
     createdAt: product._createdAt,
+    reviews: product.reviews ?? [],
   };
 }
 

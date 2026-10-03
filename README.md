@@ -30,6 +30,8 @@ Stock is untracked until you enter a quantity for every available size, e.g. `M:
 
 Product photos support JPG, PNG, and WebP, up to eight images per product and 8 MB per file. Featured products sort before the rest of the catalog.
 
+Customer reviews are stored on each product in Sanity. Add the updated product schema to Sanity Studio to view review entries there; the storefront accepts a customer name, 1–5 star rating, and written review, then displays the saved review and product average.
+
 Selecting the first photo in the new-product form can draft a title, URL slug, category, colors, and description with OpenAI vision. Set the server-only `OPENAI_API_KEY` locally and in Vercel to enable it; optionally set `OPENAI_VISION_MODEL` (defaults to `gpt-4o-mini`). Review all suggestions and enter price, fabric, and stock yourself before uploading. AI drafting does not publish products; publishing still requires the Sanity write configuration above and an explicit form submission.
 
 The new-product form accepts optional JPG, PNG, or WebP artwork up to 4 MB as a visual reference, then uses one action to generate a mockup, draft its name/category/description/suggested GHS price, and publish the product to Sanity. Set the server-only `VENICE_API_KEY` locally and in Vercel; optionally set `VENICE_IMAGE_MODEL` (defaults to `gpt-image-2-5-flare`), `VENICE_REFERENCE_IMAGE_MODEL` (defaults to `krea-v2-large` for artwork references), and `VENICE_TEXT_MODEL` (defaults to the vision-capable `qwen3-5-9b`). Each image/detail generation consumes Venice credits. Artwork guides the design, but generated logos/text may not reproduce exactly.

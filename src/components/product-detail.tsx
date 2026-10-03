@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/currency";
 import type { Product } from "@/lib/products";
+import ProductReviews from "@/components/product-reviews";
 
 function getSwatchColor(color: string) {
   const palette: Record<string, string> = {
@@ -132,6 +133,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       <div className="product-specs" id="size-guide">
         <p><strong>Fit</strong>Relaxed oversized</p><p><strong>Fabric</strong>{product.fabric}</p><p><strong>Care</strong>Cold wash, inside out</p>
       </div>
+      <ProductReviews productSlug={product.slug} reviews={product.reviews ?? []} />
     </>
   );
 }

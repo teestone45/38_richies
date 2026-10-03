@@ -42,6 +42,21 @@ const productSchema = {
         { name: "palette", title: "Graphic palette", type: "string" },
       ],
     },
+    {
+      name: "reviews",
+      title: "Customer reviews",
+      type: "array",
+      of: [{
+        type: "object",
+        fields: [
+          { name: "customerName", title: "Customer name", type: "string", validation: (rule: { required: () => unknown }) => rule.required() },
+          { name: "rating", title: "Star rating", type: "number", validation: (rule: { required: () => { integer: () => { min: (value: number) => { max: (value: number) => unknown } } } }) => rule.required().integer().min(1).max(5) },
+          { name: "comment", title: "Review", type: "text", rows: 4, validation: (rule: { required: () => unknown }) => rule.required() },
+          { name: "createdAt", title: "Submitted at", type: "datetime" },
+        ],
+        preview: { select: { title: "customerName", subtitle: "rating" } },
+      }],
+    },
     { name: "removed", title: "Removed from catalog", type: "boolean", initialValue: false },
   ],
 };
