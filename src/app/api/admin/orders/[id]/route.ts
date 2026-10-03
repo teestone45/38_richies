@@ -30,7 +30,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!Object.keys(update).length) return Response.json({ error: "No order changes provided." }, { status: 400 });
 
   try {
-    const order = await client.fetch<{ _id: string; status: string; email?: string; stripeSessionId?: string; items?: { title: string; size: string; quantity: number }[] } | null>(`*[_type == "order" && _id == $id][0]{_id, status, email, stripeSessionId, items}`, { id });
+    const order = await client.fetch<{ _id: string; status: string; email?: string; paymentReference?: string; stripeSessionId?: string; items?: { title: string; size: string; quantity: number }[] } | null>(`*[_type == "order" && _id == $id][0]{_id, status, email, paymentReference, stripeSessionId, items}`, { id });
     if (!order) return Response.json({ error: "Order not found." }, { status: 404 });
     await client.patch(id).set(update).commit();
     let emailSent = false;
@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           from: process.env.ORDER_EMAIL_FROM,
           to: [order.email],
           subject: `Your 38 RICHES order has shipped`,
-          text: `Your order ${order.stripeSessionId ?? id} is on its way.\n${tracking ? `Tracking: ${tracking}\n` : ""}\n${itemList}`,
+          text: `Your order ${order.paymentReference ?? order.stripeSessionId ?? id} is on its way.\n${tracking ? `Tracking: ${tracking}\n` : ""}\n${itemList}`,
         }),
       });
       emailSent = response.ok;

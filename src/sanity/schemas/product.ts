@@ -51,6 +51,9 @@ export const orderSchema = {
   title: "Order",
   type: "document",
   fields: [
+    { name: "paymentProvider", title: "Payment provider", type: "string" },
+    { name: "paymentReference", title: "Payment reference", type: "string" },
+    { name: "paystackTransactionId", title: "Paystack transaction ID", type: "string" },
     { name: "stripeSessionId", title: "Stripe Checkout Session", type: "string" },
     { name: "email", title: "Customer email", type: "string" },
     { name: "items", title: "Items", type: "array", of: [{ type: "object", fields: [{ name: "productId", type: "string" }, { name: "title", type: "string" }, { name: "size", type: "string" }, { name: "color", type: "string" }, { name: "quantity", type: "number" }, { name: "unitAmount", type: "number" }] }] },

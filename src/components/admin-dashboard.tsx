@@ -28,7 +28,9 @@ type AdminProduct = {
 
 type AdminOrder = {
   _id: string;
-  stripeSessionId: string;
+  paymentProvider?: string;
+  paymentReference?: string;
+  stripeSessionId?: string;
   email: string;
   items: { productId: string; title: string; size: string; color?: string; quantity: number; unitAmount: number }[];
   amountTotal: number;
@@ -515,7 +517,7 @@ export default function AdminDashboard() {
       const result = await readResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Could not update order.");
       await refreshOrders();
-      setNotice(`Order ${order.stripeSessionId} updated.${changes.status === "shipped" ? result.emailSent ? " Shipping email sent." : " Shipping email not sent; configure Resend to enable email notifications." : ""}`);
+      setNotice(`Order ${order.paymentReference ?? order.stripeSessionId ?? order._id} updated.${changes.status === "shipped" ? result.emailSent ? " Shipping email sent." : " Shipping email not sent; configure Resend to enable email notifications." : ""}`);
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Could not update order.");
     }
@@ -676,9 +678,9 @@ export default function AdminDashboard() {
 
       {activeAdminView === "orders" && <section className="admin-section" aria-labelledby="orders-title">
         <div className="admin-section__heading"><div><p className="eyebrow">PAYMENTS / FULFILLMENT</p><h2 id="orders-title">ORDERS</h2></div><span>{orders.length} ORDERS</span></div>
-        {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Paid Stripe checkouts will appear here after the webhook is configured.</p> : <div className="admin-order-list">
+        {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Verified Paystack payments will appear here after the webhook is configured.</p> : <div className="admin-order-list">
           {orders.map((order) => <article className="admin-order-row" key={order._id}>
-            <div className="admin-order-row__summary"><strong>{order.stripeSessionId.replace("cs_", "ORDER ").slice(0, 24)}</strong><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span><span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
+            <div className="admin-order-row__summary"><strong>{(order.paymentReference ?? order.stripeSessionId ?? order._id).replace(/^cs_/, "ORDER ").slice(0, 24)}</strong><span>{(order.paymentProvider ?? "stripe").toUpperCase()}</span><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span><span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
             <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}</span>)}</div>
             <p className="admin-order-row__address">{order.shippingAddress}</p>
             <div className="admin-order-row__controls">
