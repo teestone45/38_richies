@@ -48,6 +48,14 @@ The callback URL is `<your-site-origin>/success`. Configure `NEXT_PUBLIC_SITE_UR
 
 Keep using Paystack test keys until a full test checkout, callback, webhook, order record, and inventory update have been confirmed. Then switch Vercel to the live key and configure the production webhook URL in your Paystack live dashboard.
 
+## Security
+
+The app sends anti-framing, MIME-sniffing, referrer, permissions, and restrictive CSP directives. Vercel currently supplies HSTS for the production domain. State-changing browser requests require a same-origin `Origin` header; payment webhooks require Paystack's HMAC signature and then server-side transaction verification.
+
+In Vercel Firewall, add per-IP rate limits for `POST /api/admin/session` (for example, 5 attempts per 15 minutes), `POST /api/products/*/reviews` (for example, 10 per hour), and `POST /api/checkout` (for example, 20 per 10 minutes). Tune these thresholds for real traffic. This edge-level control is important because in-memory rate limits do not reliably span serverless instances. Public reviews are not purchase-verified, so monitor them and moderate/remove abuse in Sanity.
+
+Keep `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, Sanity tokens, and `PAYSTACK_SECRET_KEY` server-only in Vercel Environment Variables. Use a unique strong admin password and a randomly generated session secret of at least 32 bytes; rotate credentials promptly if exposed.
+
 ## Customer emails
 
 Order confirmations and shipped notifications are sent only when `RESEND_API_KEY` and `ORDER_EMAIL_FROM` are configured. Verify the sender domain/address in Resend first. The webhook still records orders if email sending is not configured; shipping email status is shown in the admin notice.

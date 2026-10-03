@@ -55,7 +55,7 @@ export function sessionCookie(value: string, maxAge = sessionDurationSeconds) {
 
 export function isSameOriginRequest(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin) return true;
+  if (!origin) return false;
 
   let originUrl: URL;
   try {

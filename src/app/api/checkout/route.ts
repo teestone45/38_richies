@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { isSameOriginRequest } from "@/lib/admin-auth";
 import { getProductBySlug } from "@/lib/products";
 
 type CheckoutRequest = {
@@ -7,6 +8,8 @@ type CheckoutRequest = {
 };
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) return Response.json({ error: "Invalid request origin." }, { status: 403 });
+
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
   if (!secretKey) {
     return Response.json({ error: "Paystack checkout is not configured yet. Add PAYSTACK_SECRET_KEY to the server environment." }, { status: 503 });
