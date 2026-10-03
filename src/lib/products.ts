@@ -25,6 +25,7 @@ export type Product = {
   artwork?: ProductArtwork;
   inventory?: Record<string, number>;
   featured?: boolean;
+  createdAt?: string;
 };
 
 const fallbackProducts: Product[] = [
@@ -94,6 +95,7 @@ const starterProducts: Product[] = [...fallbackProducts, ...archiveTees];
 type SanityProduct = Partial<Product> & {
   _id: string;
   slug: string;
+  _createdAt?: string;
   price?: number;
   priceCents?: number;
   image?: string;
@@ -125,6 +127,7 @@ const sanity = hasSanityConfig
 
 const productProjection = `{
   _id,
+  _createdAt,
   "slug": slug.current,
   title,
   price,
@@ -166,6 +169,7 @@ function normalizeProduct(product: SanityProduct): Product {
     artwork: product.artwork,
     inventory: product.inventory?.length ? product.inventory.reduce((stock, variant) => ({ ...stock, [variant.size]: variant.quantity }), {}) : undefined,
     featured: product.featured ?? false,
+    createdAt: product._createdAt,
   };
 }
 
