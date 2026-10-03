@@ -83,7 +83,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .collection-favorites span:first-child { color: #ef8585; font-size: 15px; line-height: 1; }
 .collection-favorites[aria-pressed="true"] { border-color: var(--lime); color: var(--lime); }
 .collection-favorites__count { color: var(--muted); font-size: 8px; }
-.collection-count { grid-column: 3; grid-row: 1; justify-self: end; margin: 0; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .13em; white-space: nowrap; }
+.collection-refinements { grid-column: 1 / -1; grid-row: 3; display: flex; align-items: center; gap: 14px; min-height: 36px; }
+.collection-size { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.collection-size select { min-height: 34px; max-width: 150px; padding: 0 9px; border: 1px solid #315064; border-radius: 0; background: #101f29; color: var(--paper); font: inherit; font-size: 9px; letter-spacing: 0; text-transform: none; }
+.collection-stock { display: flex; align-items: center; gap: 7px; color: var(--paper); font-size: 9px; white-space: nowrap; cursor: pointer; }
+.collection-stock input { width: 15px; height: 15px; accent-color: var(--lime); }
+.collection-reset { min-height: 32px; padding: 0 8px; border: 0; background: transparent; color: var(--muted); font-size: 8px; text-decoration: underline; cursor: pointer; }
+.collection-count { margin: 0 0 0 auto; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .13em; white-space: nowrap; }
 .collection-empty { padding: 50px 0; color: var(--muted); font-size: 12px; }
 .product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .product-card { min-width: 0; }
@@ -326,8 +332,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .collection-tools { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
   .collection-search { grid-column: 1 / -1; grid-row: 1; }
   .collection-actions { grid-column: 1; grid-row: 2; justify-content: start; }
-  .collection-count { grid-column: 2; grid-row: 2; align-self: center; }
   .collection-filters { grid-column: 1 / -1; grid-row: 3; }
+  .collection-refinements { grid-column: 1 / -1; grid-row: 4; flex-wrap: wrap; gap: 8px 12px; }
+  .collection-size select { max-width: 120px; }
   .collection-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; }
   .collection-filters button { flex: 0 0 auto; }
   .product-grid { gap: 23px 9px; }
