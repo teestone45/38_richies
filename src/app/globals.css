@@ -153,8 +153,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .size-option:disabled { border-color: #294253; color: #718c98; cursor: not-allowed; text-decoration: line-through; }
 .size-option small { display: block; margin-top: 3px; font-size: 7px; }
 .stock-note { margin: 10px 0 0; color: var(--lime); font-size: 9px; }
+.product-quantity { display: flex; align-items: center; gap: 12px; margin-top: 22px; color: var(--paper); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.quantity-stepper { width: 126px; height: 40px; display: grid; grid-template-columns: 40px 1fr 40px; border: 1px solid #315064; }
+.quantity-stepper button { border: 0; background: transparent; color: var(--paper); font-size: 16px; cursor: pointer; }
+.quantity-stepper button:disabled { color: #718c98; cursor: not-allowed; }
+.quantity-stepper input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--paper); font-size: 11px; text-align: center; appearance: textfield; }
+.quantity-stepper input::-webkit-inner-spin-button, .quantity-stepper input::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.product-quantity__limit { color: var(--muted); font-size: 7px; font-weight: 500; letter-spacing: .04em; }
 .product-info__placement { margin: 13px 0 0; color: var(--muted); font-size: 9px; line-height: 1.7; }
-.add-button { width: 100%; margin-top: 28px; }
+.add-button { width: 100%; margin-top: 18px; }
 .product-info__shipping { margin-top: 14px; color: var(--muted); font-size: 9px; text-align: center; }
 .product-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 26px 0; margin-top: 42px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .product-specs p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.7; }

@@ -15,7 +15,7 @@ export type CartItem = {
 type CartStore = {
   items: CartItem[];
   hasHydrated: boolean;
-  addItem: (product: Product, size: string, color?: string) => void;
+  addItem: (product: Product, size: string, color?: string, quantity?: number) => void;
   removeItem: (productId: string, size: string, color?: string) => void;
   setQuantity: (productId: string, size: string, quantity: number, color?: string) => void;
   clearCart: () => void;
@@ -27,16 +27,20 @@ export const useCartStore = create<CartStore>()(
     (set) => ({
       items: [],
       hasHydrated: false,
-      addItem: (product, size, color) => set((state) => {
+      addItem: (product, size, color, quantity = 1) => set((state) => {
         const selectedColor = color ?? product.colors?.[0] ?? "Default";
+        const safeQuantity = Number.isFinite(quantity) ? Math.floor(quantity) : 1;
+        const requestedQuantity = Math.max(1, Math.min(10, safeQuantity));
+        const maxQuantity = Math.min(10, product.inventory?.[size] ?? 10);
         const existing = state.items.find((item) => item.productId === product.slug && item.size === size && (item.color ?? "Default") === selectedColor);
         if (existing) {
-          return { items: state.items.map((item) => item === existing ? { ...item, quantity: Math.min(item.quantity + 1, 10) } : item) };
+          return { items: state.items.map((item) => item === existing ? { ...item, quantity: Math.min(item.quantity + requestedQuantity, maxQuantity) } : item) };
         }
+        if (maxQuantity < 1) return { items: state.items };
         return {
           items: [...state.items, {
             productId: product.slug, title: product.title, image: product.image,
-            priceCents: product.priceCents, size, color: selectedColor, quantity: 1,
+            priceCents: product.priceCents, size, color: selectedColor, quantity: Math.min(requestedQuantity, maxQuantity),
           }],
         };
       }),
