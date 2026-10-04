@@ -4,6 +4,7 @@ import { getSanityAdminClient } from "@/lib/sanity-admin";
 const ordersQuery = `*[_type == "order"] | order(createdAt desc) {
   _id,
   paymentProvider,
+  orderNumber,
   paymentReference,
   stripeSessionId,
   email,
@@ -15,6 +16,7 @@ const ordersQuery = `*[_type == "order"] | order(createdAt desc) {
   status,
   shippingAddress,
   trackingNumber,
+  gpsLocation,
   createdAt,
   emailNotifiedAt
 }`;

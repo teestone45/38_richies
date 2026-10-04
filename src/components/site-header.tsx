@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCartStore } from "@/lib/cart-store";
 
 export default function SiteHeader() {
@@ -9,8 +10,8 @@ export default function SiteHeader() {
 
   return (
     <header className="site-header">
-      <Link className="wordmark" href="/" aria-label="38 RICHES home">38<span>R</span></Link>
-      <nav className="main-nav" aria-label="Main navigation"><Link href="/#shop">Shop</Link><Link href="/#story">Our story</Link></nav>
+      <Link className="wordmark" href="/" aria-label="38 RICHES home"><Image src="/images/38-richies-embroidered.svg" alt="38 RICHIES embroidered logo" width={88} height={68} priority /></Link>
+      <nav className="main-nav" aria-label="Main navigation"><Link href="/#shop">Shop</Link><Link href="/journal">Journal</Link><Link href="/#story">Our story</Link></nav>
       <Link className="bag-link" href="/cart" aria-label={`Shopping bag, ${count} items`}>
         Bag <span className="bag-count">{hasHydrated ? count : 0}</span>
       </Link>

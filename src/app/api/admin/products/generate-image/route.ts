@@ -91,8 +91,8 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "Invalid request origin." }, { status: 403 });
   if (!hasAdminSession(request)) return Response.json({ error: "Sign in to generate product images." }, { status: 401 });
 
-  const apiKey = process.env.VENICE_API_KEY;
-  if (!apiKey) return Response.json({ error: "Image generation is not configured. Add VENICE_API_KEY to the server environment." }, { status: 503 });
+  const apiKey = process.env.VENICE_INFERENCE_KEY ?? process.env.VENICE_API_KEY;
+  if (!apiKey) return Response.json({ error: "Image generation is not configured. Add VENICE_INFERENCE_KEY to the server environment." }, { status: 503 });
 
   let form: FormData;
   try {
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
     }, 44_000);
 
     if (!response.ok) {
-      if (response.status === 401) return Response.json({ error: "Venice rejected the API key. Check VENICE_API_KEY in the server environment." }, { status: 502 });
+      if (response.status === 401) return Response.json({ error: "Venice rejected the API key. Check VENICE_INFERENCE_KEY in the server environment." }, { status: 502 });
       if (response.status === 402) return Response.json({ error: "Venice AI has insufficient credits for image generation." }, { status: 402 });
       if (response.status === 429) return Response.json({ error: "Venice AI is rate-limiting requests. Wait a moment and try again." }, { status: 429 });
       console.error("Venice image generation failed", response.status);

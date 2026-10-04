@@ -9,11 +9,14 @@ function ReviewStars({ rating }: { rating: number }) {
   return <span className="review-stars" role="img" aria-label={`${rating} out of 5 stars`}>{ratings.map((star) => <span key={star} aria-hidden="true">{star <= rating ? "★" : "☆"}</span>)}</span>;
 }
 
-export default function ProductReviews({ productSlug, reviews: initialReviews }: { productSlug: string; reviews: ProductReview[] }) {
+export default function ProductReviews({ productSlug, sizes, reviews: initialReviews }: { productSlug: string; sizes: string[]; reviews: ProductReview[] }) {
   const [reviews, setReviews] = useState(initialReviews);
   const [customerName, setCustomerName] = useState("");
   const [email, setEmail] = useState("");
   const [orderReference, setOrderReference] = useState("");
+  const [sizePurchased, setSizePurchased] = useState(sizes[0] ?? "");
+  const [height, setHeight] = useState("");
+  const [fitFeedback, setFitFeedback] = useState<NonNullable<ProductReview["fitFeedback"]>>("true-to-size");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +32,7 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
       const response = await fetch(`/api/products/${encodeURIComponent(productSlug)}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerName, email, orderReference, rating, comment, website: formData.get("website") }),
+        body: JSON.stringify({ customerName, email, orderReference, rating, comment, sizePurchased, height, fitFeedback, website: formData.get("website") }),
       });
       const result = await response.json() as { review?: ProductReview; error?: string };
       if (!response.ok || !result.review) throw new Error(result.error ?? "Could not submit your review.");
@@ -37,6 +40,9 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
       setCustomerName("");
       setEmail("");
       setOrderReference("");
+      setSizePurchased(sizes[0] ?? "");
+      setHeight("");
+      setFitFeedback("true-to-size");
       setRating(5);
       setComment("");
       setMessage("Thanks for sharing your review.");
@@ -62,6 +68,7 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
             <article className="product-review" key={review._key}>
               <div className="product-review__byline"><strong>{review.customerName}</strong><time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleDateString("en-GH", { year: "numeric", month: "short", day: "numeric" })}</time></div>
               <div className="product-review__rating"><ReviewStars rating={review.rating} />{review.verifiedPurchase && <span>VERIFIED PURCHASE</span>}</div>
+              {(review.sizePurchased || review.height || review.fitFeedback) && <p className="product-review__fit">{[review.sizePurchased && `Wore ${review.sizePurchased}`, review.height, review.fitFeedback && ({ "runs-small": "Fits small", "true-to-size": "True to size", oversized: "Oversized fit" } as const)[review.fitFeedback]].filter(Boolean).join(" / ")}</p>}
               <p>{review.comment}</p>
             </article>
           )) : <p className="product-reviews__empty">No reviews yet. Be the first to share your thoughts.</p>}
@@ -72,6 +79,9 @@ export default function ProductReviews({ productSlug, reviews: initialReviews }:
           <label>Your name<input type="text" required minLength={2} maxLength={60} autoComplete="name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
           <label>Checkout email<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           <label>Order reference<input type="text" required minLength={5} maxLength={128} autoComplete="off" value={orderReference} onChange={(event) => setOrderReference(event.target.value)} /></label>
+          <label>Size purchased<select required value={sizePurchased} onChange={(event) => setSizePurchased(event.target.value)}>{sizes.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+          <label>Height (optional)<input type="number" inputMode="numeric" min="120" max="220" step="1" value={height} onChange={(event) => setHeight(event.target.value)} placeholder="Height in cm" /></label>
+          <label>How did the fit feel?<select value={fitFeedback} onChange={(event) => setFitFeedback(event.target.value as NonNullable<ProductReview["fitFeedback"]>)}><option value="runs-small">Runs small</option><option value="true-to-size">True to size</option><option value="oversized">Oversized</option></select></label>
           <fieldset>
             <legend>Your rating</legend>
             <div className="product-review-form__rating" role="group" aria-label="Choose a star rating">

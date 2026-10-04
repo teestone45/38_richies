@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     update.price = price;
   }
-  for (const [field, limit] of [["description", 2000], ["category", 80], ["badge", 32], ["dtfPlacement", 160], ["fabric", 100]] as const) {
+  for (const [field, limit] of [["description", 2000], ["category", 80], ["badge", 32], ["dtfPlacement", 160], ["fabric", 100], ["dropName", 80], ["storyTitle", 100], ["story", 1600], ["stylingNotes", 500]] as const) {
     if (has(field)) {
       const value = stringValue(field);
       if (value.length > limit || (field === "category" && !value)) return Response.json({ error: `Check the ${field} field.` }, { status: 400 });

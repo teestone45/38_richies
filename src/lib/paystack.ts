@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/lib/currency";
+import { generateOrderReference, getOrderTrackingUrl } from "@/lib/order-reference";
 import { getProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
@@ -21,7 +22,7 @@ type PaystackTransaction = {
   metadata?: string | PaystackMetadata | null;
   customer?: { email?: string | null };
 };
-type SanityProduct = { _id: string; _rev: string; title: string; sizes?: string[]; inventory?: { size: string; quantity: number }[] };
+type SanityProduct = { _id: string; _rev: string; title: string; dropName?: string; sizes?: string[]; inventory?: { size: string; quantity: number }[] };
 
 function parseMetadata(value: PaystackTransaction["metadata"]): PaystackMetadata | null {
   try {
@@ -75,20 +76,25 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
   const expectedAmount = subtotal - discountAmount + shippingAmount;
   if (!Number.isInteger(transaction.amount) || transaction.amount !== expectedAmount) throw new Error("Paystack transaction amount does not match the order.");
 
+  const orderNumber = generateOrderReference(transaction.reference);
   const orderId = `order-${transaction.reference}`;
-  const priorOrder = await sanity.fetch<{ _id: string } | null>(`*[_type == "order" && _id == $id][0]{_id}`, { id: orderId });
-  if (priorOrder) return { duplicate: true };
+  const priorOrder = await sanity.fetch<{ _id: string; orderNumber?: string } | null>(`*[_type == "order" && (_id == $id || paymentReference == $reference || orderNumber == $orderNumber)][0]{_id, orderNumber}`, {
+    id: orderId,
+    reference: transaction.reference,
+    orderNumber,
+  });
+  if (priorOrder) return { duplicate: true, orderNumber: priorOrder.orderNumber ?? orderNumber };
 
-  const orderItems: { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number }[] = [];
+  const orderItems: { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number; dropName?: string }[] = [];
   const inventoryByProduct = new Map<string, { product: SanityProduct; quantities: Map<string, number> }>();
   let inventoryIssue = false;
 
   for (const item of items) {
-    const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, sizes, inventory}`, { slug: item.slug });
+    const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, dropName, sizes, inventory}`, { slug: item.slug });
     const catalogProduct = product ? undefined : await getProductBySlug(item.slug);
     if (!product && !catalogProduct) inventoryIssue = true;
     if ((product?.sizes ?? catalogProduct?.sizes) && !(product?.sizes ?? catalogProduct?.sizes)?.includes(item.size)) inventoryIssue = true;
-    orderItems.push({ productId: item.slug, title: product?.title ?? catalogProduct?.title ?? item.slug, size: item.size, color: item.color, quantity: item.quantity, unitAmount: item.unitAmount });
+    orderItems.push({ productId: item.slug, title: product?.title ?? catalogProduct?.title ?? item.slug, size: item.size, color: item.color, quantity: item.quantity, unitAmount: item.unitAmount, ...(product?.dropName ?? catalogProduct?.dropName ? { dropName: product?.dropName ?? catalogProduct?.dropName } : {}) });
 
     if (!product?.inventory) continue;
     const quantities = inventoryByProduct.get(product._id)?.quantities ?? new Map<string, number>();
@@ -117,6 +123,7 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
     _type: "order",
     _id: orderId,
     paymentProvider: "paystack",
+    orderNumber,
     paymentReference: transaction.reference,
     paystackTransactionId: String(transaction.id),
     email,
@@ -154,19 +161,20 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
     });
     if (!refund.ok) console.error("Paystack inventory-conflict refund request failed", refund.status);
   } else if (email && process.env.RESEND_API_KEY && process.env.ORDER_EMAIL_FROM) {
+    const trackingUrl = getOrderTrackingUrl(orderNumber);
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: process.env.ORDER_EMAIL_FROM,
         to: [email],
-        subject: `38 RICHES order ${transaction.reference}`,
-        text: `Thanks for your order. Your paid order total is ${formatCurrency(transaction.amount / 100, "GHS")}. Order reference: ${transaction.reference}`,
+        subject: `38 RICHES order ${orderNumber}`,
+        text: `Thanks for your order. Your paid order total is ${formatCurrency(transaction.amount / 100, "GHS")}. Order number: ${orderNumber}.${trackingUrl ? ` Track your order: ${trackingUrl}` : ""}`,
       }),
     });
     if (emailResponse.ok) await sanity.patch(orderId).set({ emailNotifiedAt: new Date().toISOString() }).commit();
     else console.error("Resend order confirmation returned", emailResponse.status);
   }
 
-  return { duplicate: false, inventoryIssue };
+  return { duplicate: false, inventoryIssue, orderNumber };
 }

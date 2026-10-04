@@ -15,6 +15,9 @@ export type ProductReview = {
   comment: string;
   createdAt: string;
   verifiedPurchase?: boolean;
+  sizePurchased?: string;
+  height?: string;
+  fitFeedback?: "runs-small" | "true-to-size" | "oversized";
 };
 
 export type Product = {
@@ -30,6 +33,10 @@ export type Product = {
   sizes: string[];
   dtfPlacement: string;
   fabric: string;
+  dropName?: string;
+  storyTitle?: string;
+  story?: string;
+  stylingNotes?: string;
   printMethod?: "DTF" | "DTG" | "Embroidered";
   artwork?: ProductArtwork;
   inventory?: Record<string, number>;
@@ -152,10 +159,13 @@ const productProjection = `{
   featured,
   dtfPlacement,
   fabric,
+  dropName,
+  storyTitle,
+  story,
+  stylingNotes,
   printMethod,
   artwork,
-  reviews[]{_key, customerName, rating, comment, createdAt},
-    reviews[]{_key, customerName, rating, comment, createdAt, verifiedPurchase},
+  reviews[]{_key, customerName, rating, comment, createdAt, verifiedPurchase, sizePurchased, height, fitFeedback},
   "active": active != false,
   "removed": removed == true
 }`;
@@ -177,6 +187,10 @@ function normalizeProduct(product: SanityProduct): Product {
     sizes: product.sizes?.length ? product.sizes : ["XL", "2XL"],
     dtfPlacement: product.dtfPlacement ?? "Front graphic, centered on chest.",
     fabric: product.fabric ?? "280 GSM cotton",
+    dropName: product.dropName,
+    storyTitle: product.storyTitle,
+    story: product.story,
+    stylingNotes: product.stylingNotes,
     printMethod: product.printMethod,
     artwork: product.artwork,
     inventory: product.inventory?.length ? product.inventory.reduce((stock, variant) => ({ ...stock, [variant.size]: variant.quantity }), {}) : undefined,

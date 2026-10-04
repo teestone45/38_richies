@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import FitBuilder from "@/components/fit-builder";
 import ProductCollection from "@/components/product-collection";
 import { getProducts } from "@/lib/products";
 
@@ -37,6 +39,8 @@ export default async function Home() {
         <ProductCollection products={products} />
       </section>
 
+      <FitBuilder products={products} />
+
       <section className="manifesto" id="story">
         <div className="manifesto__mark">38</div>
         <div className="manifesto__copy">
@@ -53,8 +57,9 @@ export default async function Home() {
         <div><span>03</span><p>Small-batch<br />Made with intent</p></div>
         <Link href="#shop">Find your piece <span aria-hidden="true">↗</span></Link>
       </section>
+      <p className="home-journal-link page-shell"><Link href="/journal">Explore the drop journal <span aria-hidden="true">↗</span></Link></p>
       <footer className="site-footer">
-        <Link className="wordmark" href="/">38<span>R</span></Link>
+        <Link className="wordmark" href="/" aria-label="38 RICHES home"><Image src="/images/38-richies-embroidered.svg" alt="38 RICHIES" width={54} height={42} /></Link>
         <p>© 2026 38 RICHES. MOVE DIFFERENT.</p>
         <Link href="/track">TRACK ORDER</Link>
         <Link href="/admin">ADMIN</Link>

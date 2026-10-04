@@ -1,4 +1,5 @@
 import { isSameOriginRequest } from "@/lib/admin-auth";
+import { normalizeOrderReference } from "@/lib/order-reference";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
 type TrackRequest = { reference?: unknown; email?: unknown };
@@ -17,9 +18,12 @@ export async function POST(request: Request) {
   if (typeof parsedBody !== "object" || parsedBody === null || Array.isArray(parsedBody)) return Response.json({ error: "Invalid tracking request." }, { status: 400 });
 
   const body = parsedBody as TrackRequest;
-  const reference = typeof body.reference === "string" ? body.reference.trim() : "";
+  const rawReference = typeof body.reference === "string" ? body.reference.trim() : "";
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  if (!/^[A-Za-z0-9_-]{5,128}$/.test(reference) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const normalizedReference = normalizeOrderReference(rawReference);
+  const orderId = normalizedReference ? `order-${normalizedReference}` : "";
+
+  if (!/^[A-Za-z0-9_-]{5,128}$/.test(normalizedReference) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return Response.json({ error: "Enter a valid order reference and checkout email." }, { status: 400 });
   }
 
@@ -28,6 +32,7 @@ export async function POST(request: Request) {
 
   try {
     const order = await client.fetch<{
+      orderNumber?: string;
       paymentReference?: string;
       stripeSessionId?: string;
       email?: string;
@@ -35,7 +40,12 @@ export async function POST(request: Request) {
       status?: string;
       trackingNumber?: string;
       createdAt?: string;
-    } | null>(`*[_type == "order" && (paymentReference == $reference || stripeSessionId == $reference)][0]{paymentReference, stripeSessionId, email, items[]{title, size, color, quantity}, status, trackingNumber, createdAt}`, { reference });
+      gpsLocation?: { latitude: number; longitude: number; accuracy?: number; updatedAt?: string };
+    } | null>(`*[_type == "order" && (paymentReference == $reference || paymentReference == $normalizedReference || stripeSessionId == $reference || stripeSessionId == $normalizedReference || orderNumber == $reference || orderNumber == $normalizedReference || _id == $reference || _id == $orderId)][0]{orderNumber, paymentReference, stripeSessionId, email, items[]{title, size, color, quantity}, status, trackingNumber, createdAt, gpsLocation{latitude, longitude, accuracy, updatedAt}}`, {
+      reference: rawReference,
+      normalizedReference,
+      orderId,
+    });
 
     if (!order || order.email?.trim().toLowerCase() !== email) {
       return Response.json({ error: "We couldn't find an order with those details." }, { status: 404, headers: { "Cache-Control": "no-store" } });
@@ -43,11 +53,13 @@ export async function POST(request: Request) {
 
     return Response.json({
       order: {
-        reference: order.paymentReference ?? order.stripeSessionId ?? reference,
+        orderNumber: order.orderNumber ?? order.paymentReference ?? order.stripeSessionId ?? rawReference,
+        reference: order.orderNumber ?? order.paymentReference ?? order.stripeSessionId ?? rawReference,
         items: order.items ?? [],
         status: order.status ?? "paid",
         trackingNumber: order.trackingNumber ?? "",
         createdAt: order.createdAt ?? "",
+        gpsLocation: order.gpsLocation ?? null,
       },
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

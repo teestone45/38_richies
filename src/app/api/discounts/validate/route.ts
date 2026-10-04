@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const discount = await calculateDiscount(body.code, pricing.subtotal);
     if (!discount.valid) return Response.json({ error: discount.error }, { status: 400 });
     const shipping = pricing.subtotal - discount.discountAmount >= 10000 ? 0 : 800;
-    return Response.json({ code: discount.code, discountAmount: discount.discountAmount, total: pricing.subtotal - discount.discountAmount + shipping }, { headers: { "Cache-Control": "no-store" } });
+    return Response.json({ code: discount.code, discountAmount: discount.discountAmount, shippingAmount: shipping, total: pricing.subtotal - discount.discountAmount + shipping }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Discount validation failed", error);
     return Response.json({ error: "Discount codes are temporarily unavailable." }, { status: 502 });

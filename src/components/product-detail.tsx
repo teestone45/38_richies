@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState, type FormEvent } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/currency";
@@ -50,7 +51,7 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
     return `/images/${slug}-${cleanColor}-${cleanSize}.jpg`;
   }, [product.slug, selectedColor, selectedSize]);
 
-  const previewImage = selectedImage > 0 ? product.images[selectedImage] ?? variantImage : variantImage;
+  const previewImage = product.images[selectedImage] ?? product.image ?? variantImage;
 
   function addToBag() {
     if (outOfStock || quantityToAdd < 1) return;
@@ -85,14 +86,15 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
     <>
       <div className="product-media">
         <div className={`product-stage product-stage--${selectedSize.replaceAll(" ", "-")}`}>
-          <img
+          <Image
             className="product-stage__image"
             src={previewImage}
             alt={`${product.title} color ${selectedColor} size ${selectedSize}`}
-            onError={(event) => {
-              event.currentTarget.src = product.image;
-            }}
-            style={{ objectFit: "cover", width: "100%", height: "100%" }}
+            fill
+            unoptimized
+            priority
+            sizes="(max-width: 768px) 100vw, 50vw"
+            style={{ objectFit: "cover" }}
           />
           <span className="product-stage__size">FIT PREVIEW / {selectedSize.toUpperCase()}</span>
         </div>
@@ -162,7 +164,11 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
       <div className="product-specs" id="size-guide">
         <p><strong>Fit</strong>Relaxed oversized</p><p><strong>Fabric</strong>{product.fabric}</p><p><strong>Care</strong>Cold wash, inside out</p>
       </div>
-      <ProductReviews productSlug={product.slug} reviews={product.reviews ?? []} />
+      <section className="product-story" aria-labelledby="product-story-title">
+        <div><p className="eyebrow">{product.dropName ?? product.badge} / BEHIND THE PIECE</p><h2 id="product-story-title">{product.storyTitle ?? `The idea behind ${product.title}`}</h2></div>
+        <div><p>{product.story ?? product.description}</p>{product.stylingNotes && <p className="product-story__styling"><strong>STYLE NOTE</strong>{product.stylingNotes}</p>}</div>
+      </section>
+      <ProductReviews productSlug={product.slug} sizes={product.sizes} reviews={product.reviews ?? []} />
     </>
   );
 }

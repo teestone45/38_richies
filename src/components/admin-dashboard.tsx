@@ -21,6 +21,10 @@ type AdminProduct = {
   colors?: string[];
   dtfPlacement: string;
   fabric: string;
+  dropName?: string;
+  storyTitle?: string;
+  story?: string;
+  stylingNotes?: string;
   printMethod: "DTF" | "DTG" | "Embroidered";
   inventory?: Record<string, number>;
   featured: boolean;
@@ -29,6 +33,7 @@ type AdminProduct = {
 type AdminOrder = {
   _id: string;
   paymentProvider?: string;
+  orderNumber?: string;
   paymentReference?: string;
   stripeSessionId?: string;
   email: string;
@@ -41,6 +46,7 @@ type AdminOrder = {
   shippingAddress: string;
   trackingNumber: string;
   createdAt: string;
+  gpsLocation?: { latitude: number; longitude: number; accuracy: number; updatedAt: string } | null;
 };
 
 type ApiResponse = {
@@ -118,6 +124,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [savingId, setSavingId] = useState("");
+  const [gpsUpdatingId, setGpsUpdatingId] = useState("");
   const [deletingId, setDeletingId] = useState("");
   const [editingId, setEditingId] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -508,7 +515,7 @@ export default function AdminDashboard() {
     }
   }
 
-  async function updateOrder(order: AdminOrder, changes: { status?: string; trackingNumber?: string }) {
+  async function updateOrder(order: AdminOrder, changes: { status?: string; trackingNumber?: string; gpsLocation?: { latitude: number; longitude: number; accuracy: number } }) {
     setError("");
     try {
       const response = await fetch(`/api/admin/orders/${encodeURIComponent(order._id)}`, {
@@ -523,6 +530,37 @@ export default function AdminDashboard() {
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Could not update order.");
     }
+  }
+
+  function shareOrderGps(order: AdminOrder) {
+    setError("");
+    setNotice("");
+    if (!navigator.geolocation) {
+      setError("This device or browser does not support GPS location.");
+      return;
+    }
+
+    setGpsUpdatingId(order._id);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void updateOrder(order, {
+          gpsLocation: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          },
+        }).finally(() => setGpsUpdatingId(""));
+      },
+      (locationError) => {
+        setError(locationError.code === locationError.PERMISSION_DENIED
+          ? "Location permission was denied. Allow location access to share an update."
+          : locationError.code === locationError.TIMEOUT
+            ? "Could not get the device location in time. Try again outdoors or with location services enabled."
+            : "Could not read the device location. Check that location services are enabled.");
+        setGpsUpdatingId("");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   }
 
   const visibleProducts = products.filter((product) => `${product.title} ${product.slug} ${product.category}`.toLowerCase().includes(catalogQuery.trim().toLowerCase()));
@@ -667,6 +705,10 @@ export default function AdminDashboard() {
                     <label>Feature product<select name="featured" defaultValue={product.featured ? "true" : "false"}><option value="false">Standard</option><option value="true">Featured</option></select></label>
                     <label>Print placement<input name="dtfPlacement" maxLength={160} defaultValue={product.dtfPlacement} /></label>
                     <label>Fabric / weight<input name="fabric" maxLength={100} defaultValue={product.fabric} /></label>
+                    <label>Drop / collection<input name="dropName" maxLength={80} defaultValue={product.dropName ?? ""} placeholder="Drop 001 / 2026" /></label>
+                    <label>Story headline<input name="storyTitle" maxLength={100} defaultValue={product.storyTitle ?? ""} placeholder="The idea behind the piece" /></label>
+                    <label className="admin-product-form__wide">Behind the piece<textarea name="story" rows={4} maxLength={1600} defaultValue={product.story ?? ""} placeholder="Share the inspiration, print details, or point of view behind this piece." /></label>
+                    <label className="admin-product-form__wide">Styling notes<textarea name="stylingNotes" rows={2} maxLength={500} defaultValue={product.stylingNotes ?? ""} placeholder="How to wear or pair this piece." /></label>
                     <label className="admin-upload">Replace / add gallery images<input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple /><small>Optional · Up to 8 JPG, PNG or WebP · 8 MB each</small></label>
                     <div className="admin-edit-form__commands"><button className="button button--lime" type="submit" disabled={!canManageProducts || savingId === product._id}>{savingId === product._id ? "Saving changes..." : "Save product details"}</button></div>
                   </form>
@@ -682,12 +724,16 @@ export default function AdminDashboard() {
         <div className="admin-section__heading"><div><p className="eyebrow">PAYMENTS / FULFILLMENT</p><h2 id="orders-title">ORDERS</h2></div><span>{orders.length} ORDERS</span></div>
         {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Verified Paystack payments will appear here after the webhook is configured.</p> : <div className="admin-order-list">
           {orders.map((order) => <article className="admin-order-row" key={order._id}>
-            <div className="admin-order-row__summary"><strong>{(order.paymentReference ?? order.stripeSessionId ?? order._id).replace(/^cs_/, "ORDER ").slice(0, 24)}</strong><span>{(order.paymentProvider ?? "stripe").toUpperCase()}</span><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span>{order.couponCode && <span>{order.couponCode} · −{formatCurrency((order.discountAmount ?? 0) / 100)}</span>}<span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
+            <div className="admin-order-row__summary"><strong>{order.orderNumber ?? (order.paymentReference ?? order.stripeSessionId ?? order._id).replace(/^cs_/, "ORDER ").slice(0, 24)}</strong><span>{(order.paymentProvider ?? "stripe").toUpperCase()}</span><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span>{order.couponCode && <span>{order.couponCode} · −{formatCurrency((order.discountAmount ?? 0) / 100)}</span>}<span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
             <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}</span>)}</div>
             <p className="admin-order-row__address">{order.shippingAddress}</p>
             <div className="admin-order-row__controls">
-              <label>FULFILLMENT<select value={order.status} onChange={(event) => updateOrder(order, { status: event.target.value })}><option value="paid">Paid</option><option value="packing">Packing</option><option value="shipped">Shipped</option><option value="cancelled">Cancelled</option><option value="inventory_issue">Inventory issue</option></select></label>
+              <label>FULFILLMENT<select value={order.status} onChange={(event) => updateOrder(order, { status: event.target.value })}><option value="paid">Paid</option><option value="packing">Packing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option><option value="inventory_issue">Inventory issue</option></select></label>
               <label>TRACKING<input defaultValue={order.trackingNumber} placeholder="Tracking number" onBlur={(event) => { if (event.target.value !== order.trackingNumber) void updateOrder(order, { trackingNumber: event.target.value }); }} /></label>
+              <div className="admin-order-gps">
+                <button className="admin-edit" type="button" onClick={() => shareOrderGps(order)} disabled={gpsUpdatingId === order._id}>{gpsUpdatingId === order._id ? "Reading GPS..." : order.gpsLocation ? "Update GPS location" : "Share current GPS"}</button>
+                {order.gpsLocation && <span>Last shared {new Date(order.gpsLocation.updatedAt).toLocaleString()} · ±{Math.round(order.gpsLocation.accuracy)} m</span>}
+              </div>
             </div>
           </article>)}
         </div>}

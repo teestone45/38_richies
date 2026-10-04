@@ -1,11 +1,12 @@
 import Stripe from "stripe";
 import { formatCurrency } from "@/lib/currency";
+import { generateOrderReference, getOrderTrackingUrl } from "@/lib/order-reference";
 import { getProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
 type StockVariant = { size: string; quantity: number };
-type SanityProduct = { _id: string; _rev: string; title: string; inventory?: StockVariant[] };
-type OrderLine = { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number };
+type SanityProduct = { _id: string; _rev: string; title: string; dropName?: string; inventory?: StockVariant[] };
+type OrderLine = { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number; dropName?: string };
 
 export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
       const color = colorValue && colorValue.trim() ? colorValue.trim() : "Default";
       if (!slug || !size || !Number.isInteger(quantity) || quantity < 1) return Response.json({ error: "Checkout item metadata is invalid." }, { status: 400 });
 
-      const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, inventory}`, { slug });
+      const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, dropName, inventory}`, { slug });
       const catalogProduct = product ? undefined : await getProductBySlug(slug);
       if (!product && !catalogProduct) {
         inventoryIssue = true;
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
         color,
         quantity,
         unitAmount: typeof stripePrice === "object" && stripePrice ? stripePrice.unit_amount ?? 0 : 0,
+        ...(product?.dropName ?? catalogProduct?.dropName ? { dropName: product?.dropName ?? catalogProduct?.dropName } : {}),
       });
 
       if (!product?.inventory) continue;
@@ -96,9 +98,11 @@ export async function POST(request: Request) {
     const shippingAddress = address
       ? [shippingDetails?.name, address.line1, address.line2, address.city, address.state, address.postal_code, address.country].filter(Boolean).join("\n")
       : "";
+    const orderNumber = generateOrderReference(session.id);
     const order = {
       _type: "order",
       _id: orderId,
+      orderNumber,
       stripeSessionId: session.id,
       stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
       email: session.customer_details?.email ?? session.customer_email ?? "",
@@ -125,14 +129,15 @@ export async function POST(request: Request) {
 
     const email = session.customer_details?.email ?? session.customer_email;
     if (!inventoryIssue && email && process.env.RESEND_API_KEY && process.env.ORDER_EMAIL_FROM) {
+      const trackingUrl = getOrderTrackingUrl(orderNumber);
       const emailResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           from: process.env.ORDER_EMAIL_FROM,
           to: [email],
-          subject: `38 RICHES order ${session.id}`,
-          text: `Thanks for your order. Your paid order total is ${formatCurrency((session.amount_total ?? 0) / 100, session.currency?.toUpperCase() ?? "GHS")}. Order reference: ${session.id}`,
+          subject: `38 RICHES order ${orderNumber}`,
+          text: `Thanks for your order. Your paid order total is ${formatCurrency((session.amount_total ?? 0) / 100, session.currency?.toUpperCase() ?? "GHS")}. Order number: ${orderNumber}.${trackingUrl ? ` Track your order: ${trackingUrl}` : ""}`,
         }),
       });
       if (emailResponse.ok) await sanity.patch(orderId).set({ emailNotifiedAt: new Date().toISOString() }).commit();
