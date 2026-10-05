@@ -21,10 +21,18 @@ function getSwatchColor(color: string) {
     sand: "#d9c4a1",
     "off white": "#f5f0e8",
     default: "#d4d4d4",
+    tan: "#b68b62",
+    "forest green": "#174b35",
+    red: "#b51f2e",
+    "royal blue": "#1e4fa3",
+    olive: "#6b7042",
+    "light wash blue": "#9bb4c8",
   };
 
   return palette[color.trim().toLowerCase()] ?? color;
 }
+
+const darkTextSwatches = new Set(["white", "cream", "stone", "sand", "heather grey", "grey", "gray", "light wash blue"]);
 
 export default function ProductDetail({ product, restockConfirmed = false }: { product: Product; restockConfirmed?: boolean }) {
   const colors = product.colors && product.colors.length > 0 ? product.colors : ["Black", "White", "Heather Grey"];
@@ -112,7 +120,7 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
             <div className="size-options" role="group" aria-label="Choose color">
               {colors.map((color) => (
                 <button
-                  className="size-option"
+                  className="size-option size-option--color"
                   type="button"
                   key={color}
                   aria-pressed={selectedColor === color}
@@ -121,7 +129,7 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
                   onClick={() => { setSelectedColor(color); setSelectedQuantity(1); }}
                   style={{
                     backgroundColor: getSwatchColor(color),
-                    color: color.toLowerCase().includes("white") || color.toLowerCase().includes("cream") || color.toLowerCase().includes("stone") ? "#111111" : "#f5f5f5",
+                    color: darkTextSwatches.has(color.toLowerCase()) ? "#111111" : "#f5f5f5",
                     borderColor: selectedColor === color ? "#55bfd8" : "rgba(7, 27, 42, 0.32)",
                   }}
                 >

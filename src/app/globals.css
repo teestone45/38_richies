@@ -178,8 +178,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .product-info__description { max-width: 440px; color: #c3c6bd; font-size: 12px; line-height: 1.8; }
 .size-label { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 11px; font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .size-label a { color: var(--muted); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
-.size-options { display: flex; gap: 8px; }
+.size-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .size-option { width: 58px; height: 46px; border: 1px solid #555a51; background: transparent; color: var(--paper); font-size: 10px; font-weight: 700; cursor: pointer; transition: all .15s ease; }
+.size-option--color { width: auto; min-width: 58px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding-inline: 10px; }
 .size-option:hover, .size-option[aria-pressed="true"] { border-color: var(--lime); background: var(--lime); color: var(--ink); }
 .size-option:disabled { border-color: #294253; color: #718c98; cursor: not-allowed; text-decoration: line-through; }
 .size-option small { display: block; margin-top: 3px; font-size: 7px; }
