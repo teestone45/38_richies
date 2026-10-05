@@ -131,7 +131,7 @@ export function getStarterProductBySlug(slug: string) {
   return starterProducts.find((product) => product.slug === slug);
 }
 
-const useSanityCatalog = process.env.NEXT_PUBLIC_USE_SANITY === "true";
+const useSanityCatalog = process.env.NEXT_PUBLIC_USE_SANITY !== "false";
 const hasSanityConfig = useSanityCatalog && Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID && process.env.NEXT_PUBLIC_SANITY_DATASET);
 const sanity = hasSanityConfig
   ? createClient({
