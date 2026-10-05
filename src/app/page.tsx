@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import FitBuilder from "@/components/fit-builder";
+import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
 import { getProducts } from "@/lib/products";
 
@@ -41,6 +42,55 @@ export default async function Home() {
 
       <FitBuilder products={products} />
 
+      <section className="feature-band page-shell" aria-label="Brand benefits">
+        <article>
+          <span>01</span>
+          <h3>Built for motion</h3>
+          <p>Premium basics cut for everyday wear, long days, and zero compromise.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Fast local delivery</h3>
+          <p>Quick Ghana shipping on orders above GH₵100, with transparent tracking.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Small-batch quality</h3>
+          <p>Every piece is produced in limited quantities with a focused, intentional run.</p>
+        </article>
+      </section>
+
+      <section className="editorial-grid page-shell" aria-label="Editorial highlights">
+        <div className="editorial-grid__header">
+          <p className="eyebrow">DROP NOTES</p>
+          <h2>Built on rhythm, not hype.</h2>
+        </div>
+        <article className="editorial-card editorial-card--feature">
+          <div className="editorial-card__image editorial-card__image--one" />
+          <div className="editorial-card__content">
+            <p>Studio diary</p>
+            <h3>How we build a uniform that lasts.</h3>
+            <Link href="/journal">Read the story <span aria-hidden="true">↗</span></Link>
+          </div>
+        </article>
+        <article className="editorial-card">
+          <div className="editorial-card__image editorial-card__image--two" />
+          <div className="editorial-card__content">
+            <p>Fit guide</p>
+            <h3>Choose the right profile for your build.</h3>
+            <Link href="#shop">See the drop <span aria-hidden="true">↗</span></Link>
+          </div>
+        </article>
+        <article className="editorial-card">
+          <div className="editorial-card__image editorial-card__image--three" />
+          <div className="editorial-card__content">
+            <p>Customer voice</p>
+            <h3>Streetwear that moves with your routine.</h3>
+            <Link href="/journal">See the journal <span aria-hidden="true">↗</span></Link>
+          </div>
+        </article>
+      </section>
+
       <section className="manifesto" id="story">
         <div className="manifesto__mark">38</div>
         <div className="manifesto__copy">
@@ -50,6 +100,8 @@ export default async function Home() {
         <p className="manifesto__aside">Not a flex. A feeling.<br />38 RICHES is for the ones<br />building their own lane.</p>
         <span className="manifesto__stamp">EST. 2026<br />MADE TO LAST</span>
       </section>
+
+      <NewsletterSignup />
 
       <section className="details-strip page-shell" aria-label="Product details">
         <div><span>01</span><p>Heavyweight<br />280 GSM cotton</p></div>

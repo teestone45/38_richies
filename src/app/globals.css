@@ -118,6 +118,36 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .manifesto h2 span { color: #7d3544; }
 .manifesto__aside { align-self: end; margin: 0 0 24px; font-size: 13px; line-height: 1.8; }
 .manifesto__stamp { position: absolute; right: 5.5%; top: 44px; padding: 13px; border: 1px solid rgba(7, 27, 42, .35); border-radius: 50%; font-size: 8px; font-weight: 800; line-height: 1.5; text-align: center; transform: rotate(11deg); }
+.feature-band { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 48px 0 20px; }
+.feature-band article { padding: 26px 22px 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
+.feature-band span { display: inline-block; margin-bottom: 18px; color: var(--lime); font-size: 10px; letter-spacing: .12em; font-weight: 800; }
+.feature-band h3 { margin: 0 0 10px; font-size: 18px; font-family: var(--font-display); font-weight: 400; }
+.feature-band p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+.editorial-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1fr); gap: 18px; padding: 28px 0 68px; }
+.editorial-grid__header { display: flex; align-items: end; min-height: 100%; padding: 26px 12px 20px 0; }
+.editorial-grid__header h2 { margin: 0; font-size: clamp(36px, 5vw, 62px); line-height: .9; font-family: var(--font-display); font-weight: 400; }
+.editorial-card { display: flex; flex-direction: column; min-height: 330px; border: 1px solid var(--line); background: rgba(255,255,255,0.02); overflow: hidden; }
+.editorial-card--feature { grid-column: span 1; }
+.editorial-card__image { height: 180px; background-size: cover; background-position: center; }
+.editorial-card__image--one { background-image: url("https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1200&q=90"); }
+.editorial-card__image--two { background-image: url("https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=90"); }
+.editorial-card__image--three { background-image: url("https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=90"); }
+.editorial-card__content { display: flex; flex: 1; flex-direction: column; justify-content: space-between; gap: 12px; padding: 18px 18px 16px; }
+.editorial-card__content p { margin: 0; color: var(--lime); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+.editorial-card__content h3 { margin: 0; font-family: var(--font-display); font-size: 28px; line-height: 1; font-weight: 400; }
+.editorial-card__content a { color: var(--paper); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.editorial-card__content a span { color: var(--lime); }
+
+.newsletter { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 26px; align-items: center; padding: 32px 0 48px; }
+.newsletter__content { padding-right: 20px; }
+.newsletter__content h2 { margin: 0; font-family: var(--font-display); font-size: clamp(38px, 5vw, 66px); line-height: .9; font-weight: 400; }
+.newsletter__content p:last-child { margin: 14px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.newsletter__form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: end; padding: 22px; border: 1px solid var(--line); background: rgba(255,255,255,0.02); }
+.newsletter__label { display: grid; gap: 8px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+.newsletter__label input { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid #315064; background: #101f29; color: var(--paper); font: inherit; }
+.newsletter__status { grid-column: 1 / -1; margin: 0; color: var(--lime); font-size: 11px; }
+
 .details-strip { min-height: 160px; display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 20px; align-items: center; border-bottom: 1px solid var(--line); }
 .details-strip div { display: flex; align-items: start; gap: 12px; }
 .details-strip div > span { color: var(--lime); font-family: var(--font-display); font-size: 20px; }

@@ -47,7 +47,7 @@ export type Product = {
 
 const fallbackProducts: Product[] = [
   {
-    slug: "dark-trilogy-tee", title: "Dark Trilogy Tee", priceCents: 4500,
+    slug: "dark-trilogy-tee", title: "Dark Trilogy Tee", priceCents: 32000,
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1100&q=88",
     images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1100&q=88"],
     category: "Graphic tee", badge: "DROP 001",
@@ -56,7 +56,7 @@ const fallbackProducts: Product[] = [
     printMethod: "DTF", artwork: { top: "38 RICHES", center: "38", bottom: "MOVE DIFFERENT / 001", palette: "ink" },
   },
   {
-    slug: "after-hours-tee", title: "After Hours Tee", priceCents: 4200,
+    slug: "after-hours-tee", title: "After Hours Tee", priceCents: 30000,
     image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1100&q=88",
     images: ["https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1100&q=88"],
     category: "Graphic tee", badge: "SMALL RUN",
@@ -65,7 +65,7 @@ const fallbackProducts: Product[] = [
     printMethod: "DTG", artwork: { top: "AFTER HOURS", center: "38", bottom: "STAY OUT A LITTLE LONGER", palette: "gold" },
   },
   {
-    slug: "riches-heavy-hoodie", title: "38 Heavy Hoodie", priceCents: 8800,
+    slug: "riches-heavy-hoodie", title: "38 Heavy Hoodie", priceCents: 68000,
     image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1100&q=88",
     images: ["https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1100&q=88"],
     category: "Fleece", badge: "HEAVYWEIGHT",
@@ -74,7 +74,7 @@ const fallbackProducts: Product[] = [
     printMethod: "DTF", artwork: { top: "38 RICHES", center: "38", bottom: "HEAVY GOODS / 001", palette: "ink" },
   },
   {
-    slug: "off-script-cap", title: "Off Script Cap", priceCents: 3200,
+    slug: "off-script-cap", title: "Off Script Cap", priceCents: 22000,
     image: "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1100&q=88",
     images: ["https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1100&q=88"],
     category: "Accessories", badge: "ONE SIZE",
@@ -131,7 +131,8 @@ export function getStarterProductBySlug(slug: string) {
   return starterProducts.find((product) => product.slug === slug);
 }
 
-const hasSanityConfig = Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID && process.env.NEXT_PUBLIC_SANITY_DATASET);
+const useSanityCatalog = process.env.NEXT_PUBLIC_USE_SANITY === "true";
+const hasSanityConfig = useSanityCatalog && Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID && process.env.NEXT_PUBLIC_SANITY_DATASET);
 const sanity = hasSanityConfig
   ? createClient({
       projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
