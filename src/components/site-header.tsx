@@ -15,6 +15,11 @@ export default function SiteHeader() {
       <Link className="bag-link" href="/cart" aria-label={`Shopping bag, ${count} items`}>
         Bag <span className="bag-count">{hasHydrated ? count : 0}</span>
       </Link>
+      <nav className="mobile-dock" aria-label="Mobile navigation">
+        <Link href="/#shop"><span aria-hidden="true">⌕</span>Shop</Link>
+        <Link href="/journal"><span aria-hidden="true">↗</span>Journal</Link>
+        <Link href="/cart" aria-label={`Shopping bag, ${count} items`}><span aria-hidden="true">▣</span>Bag{hasHydrated && count ? ` (${count})` : ""}</Link>
+      </nav>
     </header>
   );
 }
