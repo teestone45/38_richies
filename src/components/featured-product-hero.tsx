@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/currency";
+import { storeDashboardEvent, type StoreDashboardAction } from "@/lib/store-dashboard";
 import type { Product } from "@/lib/products";
 
 const swatches: Record<string, string> = {
@@ -33,6 +34,16 @@ export default function FeaturedProductHero({ products }: { products: Product[] 
   const [selectedColor, setSelectedColor] = useState(products[0]?.colors?.[0] ?? "Black");
   const [selectedSize, setSelectedSize] = useState(products[0]?.sizes[0] ?? "XL");
   const addItem = useCartStore((state) => state.addItem);
+
+  useEffect(() => {
+    function onDashboardAction(event: Event) {
+      const action = (event as CustomEvent<StoreDashboardAction>).detail;
+      if (action === "add-to-cart") document.querySelector<HTMLButtonElement>(".feature-hero__add")?.click();
+      if (action === "color") document.getElementById("featured-colors")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    window.addEventListener(storeDashboardEvent, onDashboardAction);
+    return () => window.removeEventListener(storeDashboardEvent, onDashboardAction);
+  }, []);
 
   if (!products.length) return null;
 
@@ -86,7 +97,7 @@ export default function FeaturedProductHero({ products }: { products: Product[] 
 
           <div className="feature-hero__option">
             <span className="feature-hero__option-label">Color <strong>{selectedColor}</strong></span>
-            <div className="feature-hero__swatches" role="group" aria-label="Choose color">
+            <div className="feature-hero__swatches" id="featured-colors" role="group" aria-label="Choose color" tabIndex={-1}>
               {colors.map((color) => <button key={color} className="feature-hero__swatch" type="button" aria-label={color} aria-pressed={selectedColor === color} title={color} style={{ "--swatch-color": getSwatch(color) } as React.CSSProperties} onClick={() => setSelectedColor(color)} />)}
             </div>
           </div>

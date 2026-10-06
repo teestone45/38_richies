@@ -4,6 +4,7 @@ import FeaturedProductHero from "@/components/featured-product-hero";
 import FitBuilder from "@/components/fit-builder";
 import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
+import StoreDashboard from "@/components/store-dashboard";
 import { getProducts } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function Home() {
 
   return (
     <main>
+      <StoreDashboard products={products} />
       <FeaturedProductHero products={products} />
 
       <section className="ticker" aria-label="Brand statement">
