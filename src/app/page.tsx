@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import FeaturedProductHero from "@/components/featured-product-hero";
 import FitBuilder from "@/components/fit-builder";
 import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
@@ -12,23 +13,11 @@ export default async function Home() {
 
   return (
     <main>
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero__image" role="img" aria-label="Streetwear campaign portrait" />
-        <div className="hero__shade" />
-        <div className="hero__content">
-          <p className="eyebrow hero__eyebrow">38 RICHES / INDEPENDENT UNIFORM</p>
-          <h1 id="hero-title">BUILT<br />DIFFERENT<span>.</span></h1>
-          <div className="hero__bottom">
-            <p>Heavyweight essentials.<br />No permission needed.</p>
-            <Link className="button button--lime" href="#shop">Shop the drop <span aria-hidden="true">↘</span></Link>
-          </div>
-        </div>
-        <p className="hero__index">DROP 001 / 2026</p>
-      </section>
+      <FeaturedProductHero products={products} />
 
       <section className="ticker" aria-label="Brand statement">
         <div className="ticker__track">
-          <span>MADE FOR THE ONES WHO MOVE DIFFERENT</span><i>✳</i><span>38 RICHES / NO SHORTCUTS</span><i>✳</i><span>MADE FOR THE ONES WHO MOVE DIFFERENT</span><i>✳</i>
+          <span>MORE THAN CLOTHES / IT&apos;S 38 RICHES</span><i>✳</i><span>MADE FOR THE ONES WHO MOVE DIFFERENT</span><i>✳</i><span>MORE THAN CLOTHES / IT&apos;S 38 RICHES</span><i>✳</i>
         </div>
       </section>
 

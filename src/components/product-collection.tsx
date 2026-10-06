@@ -84,7 +84,11 @@ export default function ProductCollection({ products }: { products: Product[] })
           <input type="search" aria-label="Search products" placeholder="Search the rotation" value={query} onChange={(event) => setQuery(event.target.value)} />
         </label>
         <div className="collection-filters" role="group" aria-label="Filter by category">
-          {categories.map((item) => <button type="button" key={item} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}
+          {categories.map((item) => {
+            const categoryProduct = item === "All pieces" ? products[0] : products.find((product) => product.category === item);
+            const image = categoryProduct?.image;
+            return <button type="button" key={item} aria-pressed={category === item} aria-label={`Show ${item}`} style={image ? { backgroundImage: `linear-gradient(0deg, rgba(22, 16, 17, .78), rgba(22, 16, 17, .05)), url(${JSON.stringify(image)})` } : undefined} onClick={() => setCategory(item)}><span>{item === "Graphic tee" ? "T-Shirts" : item}</span></button>;
+          })}
         </div>
         <div className="collection-actions">
           <label className="collection-sort"><span>Sort</span><select aria-label="Sort products" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}><option value="newest">Newest</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
