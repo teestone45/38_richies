@@ -715,8 +715,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .track-gps__heading p:last-child { margin: 0; color: var(--paper); font-size: 9px; }
 .track-gps__heading > span { color: var(--muted); font-size: 8px; white-space: nowrap; }
 .track-gps iframe { width: 100%; height: 260px; border: 0; background: var(--surface-raised); }
-.track-gps > a { justify-self: end; color: var(--paper); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.track-gps > a:hover { color: var(--sea); }
+.track-gps__links { display: flex; justify-content: end; flex-wrap: wrap; gap: 16px; }
+.track-gps__links a { color: var(--paper); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.track-gps__links a:hover { color: var(--sea); }
 
 @media (max-width: 760px) {
   .fit-builder__content { grid-template-columns: 1fr; }

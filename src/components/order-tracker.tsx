@@ -90,7 +90,10 @@ export default function OrderTracker({ initialReference = "" }: { initialReferen
         {order.gpsLocation && <section className="track-gps" aria-label="Latest courier GPS update">
           <div className="track-gps__heading"><div><p className="eyebrow">LATEST GPS UPDATE</p><p>{order.gpsLocation.updatedAt ? new Date(order.gpsLocation.updatedAt).toLocaleString("en-GH", { dateStyle: "medium", timeStyle: "short" }) : "Location shared"}</p></div><span>±{Math.round(order.gpsLocation.accuracy ?? 0)} m</span></div>
           <iframe title="Map showing the latest shared courier location" loading="lazy" referrerPolicy="no-referrer" src={`https://www.openstreetmap.org/export/embed.html?bbox=${order.gpsLocation.longitude - 0.012}%2C${order.gpsLocation.latitude - 0.008}%2C${order.gpsLocation.longitude + 0.012}%2C${order.gpsLocation.latitude + 0.008}&layer=mapnik&marker=${order.gpsLocation.latitude}%2C${order.gpsLocation.longitude}`} />
-          <a href={`https://www.openstreetmap.org/?mlat=${order.gpsLocation.latitude}&mlon=${order.gpsLocation.longitude}#map=16/${order.gpsLocation.latitude}/${order.gpsLocation.longitude}`} target="_blank" rel="noreferrer">Open larger map ↗</a>
+          <div className="track-gps__links">
+            <a href={`https://www.google.com/maps/search/?api=1&query=${order.gpsLocation.latitude}%2C${order.gpsLocation.longitude}`} target="_blank" rel="noreferrer">Open in Google Maps ↗</a>
+            <a href={`https://www.openstreetmap.org/?mlat=${order.gpsLocation.latitude}&mlon=${order.gpsLocation.longitude}#map=16/${order.gpsLocation.latitude}/${order.gpsLocation.longitude}`} target="_blank" rel="noreferrer">Open larger map ↗</a>
+          </div>
         </section>}
         <ul className="track-result__items">{order.items.map((item, index) => <li key={`${item.title}-${item.size}-${index}`}><span>{item.title} / {item.size}{item.color ? ` / ${item.color}` : ""}</span><strong>× {item.quantity}</strong></li>)}</ul>
       </section>}
