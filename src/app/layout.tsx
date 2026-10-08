@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import SiteHeader from "@/components/site-header";
 import "./globals.css";
@@ -29,6 +30,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="announcement">Complimentary Ghana shipping on orders over GH₵100</div>
         <SiteHeader />
         {children}
+        <Link className="order-track-float" href="/track" aria-label="Track your order">
+          <span className="order-track-float__icon" aria-hidden="true">↗</span>
+          <span className="order-track-float__label"><small>ORDER STATUS</small><strong>Track order</strong></span>
+        </Link>
       </body>
     </html>
   );
