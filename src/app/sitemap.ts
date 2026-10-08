@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
-  const products = await getProducts();
+  const products = (await getProducts()).filter((product) => !/^coming soon$/i.test(product.title.trim()));
   return [
     { url: siteUrl.toString(), changeFrequency: "weekly", priority: 1 },
     { url: new URL("/journal", siteUrl).toString(), changeFrequency: "weekly", priority: 0.6 },
