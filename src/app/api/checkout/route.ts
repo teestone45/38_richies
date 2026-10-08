@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return Response.json({ error: "Invalid request origin." }, { status: 403 });
   if (Number(request.headers.get("content-length") ?? 0) > 16_384) return Response.json({ error: "Checkout request is too large." }, { status: 413 });
 
-  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
   if (!secretKey) {
     return Response.json({ error: "Paystack checkout is not configured yet. Add PAYSTACK_SECRET_KEY to the server environment." }, { status: 503 });
   }
@@ -75,10 +75,11 @@ export async function POST(request: Request) {
       }),
     });
 
-    const result = await response.json() as { status?: boolean; data?: { authorization_url?: string } };
+    const result = await response.json().catch(() => ({})) as { status?: boolean; message?: string; data?: { authorization_url?: string } };
     if (!response.ok || !result.status || !result.data?.authorization_url) {
-      console.error("Paystack transaction initialization failed", response.status);
-      return Response.json({ error: "Paystack could not start checkout. Check your account configuration and try again." }, { status: 502 });
+      const reason = typeof result.message === "string" ? result.message.slice(0, 200) : `HTTP ${response.status}`;
+      console.error("Paystack transaction initialization failed", response.status, reason);
+      return Response.json({ error: `Paystack could not start checkout: ${reason}` }, { status: 502 });
     }
     return Response.json({ url: result.data.authorization_url });
   } catch (error) {
