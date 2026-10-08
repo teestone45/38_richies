@@ -6,14 +6,28 @@ import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
 import StoreDashboard from "@/components/store-dashboard";
 import { getProducts } from "@/lib/products";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const products = await getProducts();
+  const siteUrl = getSiteUrl();
+  const structuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ClothingStore",
+    name: "38 RICHES",
+    alternateName: "38 RICHIES Clothing",
+    url: siteUrl.toString(),
+    logo: new URL("/images/38-richies-embroidered.svg", siteUrl).toString(),
+    description: "Premium streetwear and clothing in Ghana, including graphic tees, hoodies, shorts, and jeans.",
+    areaServed: { "@type": "Country", name: "Ghana" },
+    sameAs: ["https://www.tiktok.com/@38richies0"],
+  }).replace(/</g, "\\u003c");
 
   return (
     <main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
       <StoreDashboard products={products} />
       <FeaturedProductHero products={products} />
 
