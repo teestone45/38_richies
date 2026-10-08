@@ -17,10 +17,10 @@ export default async function Home() {
     "@context": "https://schema.org",
     "@type": "ClothingStore",
     name: "38 RICHES",
-    alternateName: "38 RICHIES Clothing",
+    alternateName: ["38 RICHIES Clothing", "38 Richies clothng"],
     url: siteUrl.toString(),
     logo: new URL("/images/38-richies-embroidered.svg", siteUrl).toString(),
-    description: "Premium streetwear and clothing in Ghana, including graphic tees, hoodies, shorts, and jeans.",
+    description: "Premium streetwear and clothing in Ghana, including graphic tees, hoodies, shorts, and jeans. Follow 38 Richies on TikTok @38richies0.",
     areaServed: { "@type": "Country", name: "Ghana" },
     sameAs: ["https://www.tiktok.com/@38richies0"],
   }).replace(/</g, "\\u003c");

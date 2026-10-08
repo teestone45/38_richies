@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getSiteUrl } from "@/lib/site-url";
 import SiteHeader from "@/components/site-header";
+import SupportChat from "@/components/support-chat";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   },
   description: "Shop 38 RICHES clothing in Ghana: distinctive streetwear, graphic tees, hoodies, shorts, and jeans made for people who move differently.",
   applicationName: "38 RICHES",
-  keywords: ["38 Richies clothing", "38 RICHES clothing", "Ghana streetwear", "clothing in Ghana", "graphic tees Ghana", "Ghana fashion"],
+  keywords: ["38 Richies clothing", "38 richies clothng", "38 RICHES clothing", "38 Richies", "38 Richies tiktok", "Ghana streetwear", "clothing in Ghana", "graphic tees Ghana", "Ghana fashion"],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="announcement">Complimentary Ghana shipping on orders over GH₵100</div>
         <SiteHeader />
         {children}
+        <SupportChat />
         <Link className="order-track-float" href="/track" aria-label="Track your order">
           <span className="order-track-float__icon" aria-hidden="true">↗</span>
           <span className="order-track-float__label"><small>ORDER STATUS</small><strong>Track order</strong></span>
