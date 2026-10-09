@@ -106,6 +106,13 @@ export default async function Home() {
         <span className="manifesto__stamp">EST. 2026<br />MADE TO LAST</span>
       </section>
 
+      <section className="home-seo-copy page-shell" aria-labelledby="home-seo-heading">
+        <p className="eyebrow">38 RICHES / GHANA</p>
+        <h2 id="home-seo-heading">Ghanaian streetwear with its own point of view.</h2>
+        <p>38 RICHES is a Ghanaian fashion label creating oversized streetwear for people who move differently. Our collections bring together graphic T-shirts, hoodies, and everyday pieces with a confident identity rooted in individuality and ambition.</p>
+        <p>Selected tees are made with heavyweight 280 GSM cotton and original A3 DTF prints, with considered fits and colorways for everyday wear. Explore the latest 38 RICHES drop online and discover premium urban fashion from Ghana.</p>
+      </section>
+
       <NewsletterSignup />
 
       <section className="details-strip page-shell" aria-label="Product details">

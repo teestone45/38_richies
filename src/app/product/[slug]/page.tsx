@@ -46,6 +46,11 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
     sku: product.slug,
     category: product.category,
     brand: { "@type": "Brand", name: "38 RICHES" },
+    additionalProperty: [
+      { "@type": "PropertyValue", name: "Available sizes", value: product.sizes.join(", ") },
+      { "@type": "PropertyValue", name: "Material", value: product.fabric },
+      ...(product.printMethod ? [{ "@type": "PropertyValue", name: "Print method", value: product.printMethod }] : []),
+    ],
     offers: {
       "@type": "Offer",
       url: new URL(`/product/${product.slug}`, getSiteUrl()).toString(),

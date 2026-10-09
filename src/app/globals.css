@@ -92,7 +92,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .feature-hero__layout { max-width: 1480px; min-height: 650px; display: grid; grid-template-columns: minmax(0, .82fr) minmax(330px, 1.18fr) minmax(230px, .68fr); grid-template-areas: "copy visual purchase"; align-items: center; gap: 34px; padding-block: 42px 38px; margin-inline: auto; }
 .feature-hero__copy { grid-area: copy; }
 .feature-hero__copy .eyebrow, .feature-hero__purchase .eyebrow { color: #31513d; }
-.feature-hero__copy h1 { max-width: 8ch; margin: 0; font-family: var(--font-display); font-size: 78px; font-weight: 400; line-height: .87; }
+.feature-hero__copy h1 { max-width: 12ch; margin: 0; font-family: var(--font-display); font-size: 58px; font-weight: 400; line-height: .92; }
 .feature-hero__copy h1 span { color: #7d3544; }
 .feature-hero__intro { max-width: 310px; margin: 22px 0 26px; color: #594b44; font-size: 12px; line-height: 1.8; }
 .feature-hero__edition { margin: 38px 0 0; color: #695d55; font-size: 8px; font-weight: 800; letter-spacing: .14em; }
@@ -221,6 +221,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .manifesto h2 span { color: #7d3544; }
 .manifesto__aside { align-self: end; margin: 0 0 24px; font-size: 13px; line-height: 1.8; }
 .manifesto__stamp { position: absolute; right: 5.5%; top: 44px; padding: 13px; border: 1px solid rgba(7, 27, 42, .35); border-radius: 50%; font-size: 8px; font-weight: 800; line-height: 1.5; text-align: center; transform: rotate(11deg); }
+.home-seo-copy { padding-block: 72px; }
+.home-seo-copy h2 { max-width: 720px; margin: 0 0 24px; font-family: var(--font-display); font-size: clamp(36px, 5vw, 60px); font-weight: 400; line-height: .98; }
+.home-seo-copy > p:not(.eyebrow) { max-width: 780px; margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.85; }
 .feature-band { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 48px 0 20px; }
 .feature-band article { padding: 26px 22px 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
 .feature-band span { display: inline-block; margin-bottom: 18px; color: var(--lime); font-size: 10px; letter-spacing: .12em; font-weight: 800; }
@@ -538,7 +541,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 900px) {
   .hero h1 { font-size: 104px; }
   .feature-hero__layout { min-height: 0; grid-template-columns: minmax(0, .82fr) minmax(300px, 1.18fr); grid-template-areas: "copy visual" "purchase visual"; gap: 24px; padding-block: 34px; }
-  .feature-hero__copy h1 { font-size: 58px; }
+  .feature-hero__copy h1 { font-size: 48px; }
   .feature-hero__purchase { align-self: start; }
   .feature-hero__image-link { max-height: 640px; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 26px; }
@@ -566,7 +569,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .feature-hero__masthead { min-height: 38px; font-size: 6px; letter-spacing: .1em; }
   .feature-hero__layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "visual" "copy" "purchase"; gap: 22px; padding-block: 18px 24px; }
   .feature-hero__image-link { aspect-ratio: .82; max-height: 540px; }
-  .feature-hero__copy h1 { max-width: 10ch; font-size: 50px; }
+  .feature-hero__copy h1 { max-width: 14ch; font-size: 43px; }
   .feature-hero__copy .eyebrow { margin-bottom: 9px; }
   .feature-hero__intro { margin: 13px 0 17px; }
   .feature-hero__edition { margin-top: 17px; }

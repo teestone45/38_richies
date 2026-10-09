@@ -71,7 +71,7 @@ export default function FeaturedProductHero({ products }: { products: Product[] 
       <div className="feature-hero__layout">
         <div className="feature-hero__copy">
           <p className="eyebrow">MORE THAN CLOTHES</p>
-          <h1>BUILT FROM <span>VISION.</span></h1>
+          <h1>38 RICHES | Premium Streetwear <span>Built From Vision.</span></h1>
           <p className="feature-hero__intro">Premium streetwear for people who move differently. Distinct pieces. Strong identity.</p>
           <Link className="button button--lime" href="#shop">Shop the drop <span aria-hidden="true">↗</span></Link>
           <p className="feature-hero__edition">DROP 01 <span>·</span> 38 RICHES</p>
