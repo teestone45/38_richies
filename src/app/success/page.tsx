@@ -6,7 +6,7 @@ import { getSanityAdminClient } from "@/lib/sanity-admin";
 type Passport = {
   orderNumber: string;
   createdAt: string;
-  items: { title: string; size: string; color?: string; quantity: number; dropName?: string }[];
+  items: { title: string; size: string; color?: string; quantity: number; dropName?: string; preOrder?: boolean }[];
 };
 
 export default async function SuccessPage({ searchParams }: PageProps<"/success">) {
@@ -25,7 +25,7 @@ export default async function SuccessPage({ searchParams }: PageProps<"/success"
         verified = true;
         orderReference = result.orderNumber ?? transaction.reference;
         const sanity = getSanityAdminClient();
-        const order = sanity ? await sanity.fetch<{ orderNumber?: string; status?: string; createdAt?: string; items?: Passport["items"] } | null>(`*[_type == "order" && paymentReference == $reference][0]{orderNumber, status, createdAt, items[]{title, size, color, quantity, dropName}}`, { reference: transaction.reference }) : null;
+        const order = sanity ? await sanity.fetch<{ orderNumber?: string; status?: string; createdAt?: string; items?: Passport["items"] } | null>(`*[_type == "order" && paymentReference == $reference][0]{orderNumber, status, createdAt, items[]{title, size, color, quantity, dropName, preOrder}}`, { reference: transaction.reference }) : null;
         if (order?.status === "paid") passport = { orderNumber: order.orderNumber ?? orderReference, createdAt: order.createdAt ?? new Date().toISOString(), items: order.items ?? [] };
       }
     } catch (error) {
@@ -39,7 +39,7 @@ export default async function SuccessPage({ searchParams }: PageProps<"/success"
       verified = session.payment_status === "paid";
       if (verified) {
         const sanity = getSanityAdminClient();
-        const orderRecord = sanity ? await sanity.fetch<{ orderNumber?: string; status?: string; createdAt?: string; items?: Passport["items"] } | null>(`*[_type == "order" && stripeSessionId == $sessionId][0]{orderNumber, status, createdAt, items[]{title, size, color, quantity, dropName}}`, { sessionId }) : null;
+        const orderRecord = sanity ? await sanity.fetch<{ orderNumber?: string; status?: string; createdAt?: string; items?: Passport["items"] } | null>(`*[_type == "order" && stripeSessionId == $sessionId][0]{orderNumber, status, createdAt, items[]{title, size, color, quantity, dropName, preOrder}}`, { sessionId }) : null;
         orderReference = orderRecord?.orderNumber ?? session.id;
         if (orderRecord?.status === "paid") passport = { orderNumber: orderReference, createdAt: orderRecord.createdAt ?? new Date().toISOString(), items: orderRecord.items ?? [] };
       }

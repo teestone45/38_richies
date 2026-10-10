@@ -112,6 +112,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!(comingSoonValue === false || comingSoonValue === true || comingSoonValue === "true" || comingSoonValue === "false")) return Response.json({ error: "Coming Soon must be true or false." }, { status: 400 });
     update.comingSoon = comingSoonValue === true || comingSoonValue === "true";
   }
+  if (has("preOrderEnabled")) {
+    const preOrderValue = raw("preOrderEnabled");
+    if (!(preOrderValue === false || preOrderValue === true || preOrderValue === "true" || preOrderValue === "false")) return Response.json({ error: "Pre-orders must be enabled or disabled." }, { status: 400 });
+    update.preOrderEnabled = preOrderValue === true || preOrderValue === "true";
+  }
 
   const imageFiles = form ? [...form.getAll("images"), ...form.getAll("image")].filter((file): file is File => file instanceof File && file.size > 0) : [];
   if (imageFiles.length > 8 || imageFiles.some((image) => image.size > 8 * 1024 * 1024)) return Response.json({ error: "Upload up to 8 product photos, each 8 MB or smaller." }, { status: 413 });
@@ -123,9 +128,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const starter = localSlug ? getStarterProductBySlug(localSlug) : undefined;
     if (localSlug && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
     const existing = localSlug
-      ? await client.fetch<{ _id: string; slug: string; sizes?: string[]; active?: boolean; inventory?: { size: string; quantity: number }[] } | null>(`*[_type == "product" && slug.current == $slug && removed != true][0]{_id, "slug": slug.current, sizes, active, inventory}`, { slug: localSlug })
-      : await client.fetch<{ _id: string; slug: string; sizes?: string[]; active?: boolean; inventory?: { size: string; quantity: number }[] } | null>(`*[_type == "product" && _id == $id][0]{_id, "slug": slug.current, sizes, active, inventory}`, { id });
+      ? await client.fetch<{ _id: string; slug: string; title?: string; badge?: string; comingSoon?: boolean; sizes?: string[]; active?: boolean; inventory?: { size: string; quantity: number }[] } | null>(`*[_type == "product" && slug.current == $slug && removed != true][0]{_id, "slug": slug.current, title, badge, comingSoon, sizes, active, inventory}`, { slug: localSlug })
+      : await client.fetch<{ _id: string; slug: string; title?: string; badge?: string; comingSoon?: boolean; sizes?: string[]; active?: boolean; inventory?: { size: string; quantity: number }[] } | null>(`*[_type == "product" && _id == $id][0]{_id, "slug": slug.current, title, badge, comingSoon, sizes, active, inventory}`, { id });
     if (!existing && !starter) return Response.json({ error: "Product not found." }, { status: 404 });
+    const existingIsComingSoon = existing
+      ? existing.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${existing.title ?? ""} ${existing.slug} ${existing.badge ?? ""}`)
+      : /\bcoming[\s-]+(?:soon|up)\b/i.test(`${starter?.title ?? ""} ${starter?.slug ?? ""} ${starter?.badge ?? ""}`);
+    const nextComingSoon = typeof update.comingSoon === "boolean" ? update.comingSoon : existingIsComingSoon;
+    if (update.comingSoon === false) update.preOrderEnabled = false;
+    if (update.preOrderEnabled === true && !nextComingSoon) return Response.json({ error: "Pre-orders can only be enabled for Coming Soon products." }, { status: 400 });
+    if (!nextComingSoon) update.preOrderEnabled = false;
     if (stockUpdate) {
       const allowedSizes = (update.sizes as string[] | undefined) ?? existing?.sizes ?? starter?.sizes;
       if (allowedSizes && stockUpdate.some((entry) => !allowedSizes.includes(entry.size))) return Response.json({ error: "Stock sizes must match the available sizes." }, { status: 400 });

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState, type FormEvent } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/currency";
+import { isComingSoon, isPreOrderAvailable } from "@/lib/product-availability";
 import type { Product } from "@/lib/products";
 import ProductReviews from "@/components/product-reviews";
 
@@ -46,10 +47,12 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
   const [restockMessage, setRestockMessage] = useState(restockConfirmed ? "Email confirmed. We'll notify you when this size is back." : "");
   const [isRequestingRestock, setIsRequestingRestock] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  const isUpcoming = isComingSoon(product);
+  const isPreOrder = isPreOrderAvailable(product);
   const quantityInBag = useCartStore((state) => state.items.find((item) => item.productId === product.slug && item.size === selectedSize && (item.color ?? "Default") === selectedColor)?.quantity ?? 0);
   const selectedStock = product.inventory?.[selectedSize];
-  const outOfStock = selectedStock !== undefined && selectedStock < 1;
-  const maxAddQuantity = Math.max(0, Math.min(10, selectedStock ?? 10) - quantityInBag);
+  const outOfStock = !isPreOrder && selectedStock !== undefined && selectedStock < 1;
+  const maxAddQuantity = Math.max(0, Math.min(10, isPreOrder ? 10 : selectedStock ?? 10) - quantityInBag);
   const quantityToAdd = Math.min(selectedQuantity, maxAddQuantity);
 
   const variantImage = useMemo(() => {
@@ -144,11 +147,12 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
         <div className="size-options" role="group" aria-label="Choose size">
           {product.sizes.map((size) => {
             const stock = product.inventory?.[size];
-            const unavailable = stock !== undefined && stock < 1;
-            return <button className="size-option" type="button" key={size} aria-pressed={selectedSize === size} aria-label={stock === undefined ? size : `${size}, ${unavailable ? "sold out" : `${stock} in stock`}`} disabled={unavailable} onClick={() => { setSelectedSize(size); setSelectedQuantity(1); }}>{size}{stock !== undefined && <small>{unavailable ? "OUT" : stock}</small>}</button>;
+            const unavailable = !isPreOrder && stock !== undefined && stock < 1;
+            return <button className="size-option" type="button" key={size} aria-pressed={selectedSize === size} aria-label={isPreOrder || stock === undefined ? size : `${size}, ${unavailable ? "sold out" : `${stock} in stock`}`} disabled={unavailable} onClick={() => { setSelectedSize(size); setSelectedQuantity(1); }}>{size}{!isPreOrder && stock !== undefined && <small>{unavailable ? "OUT" : stock}</small>}</button>;
           })}
         </div>
-        {selectedStock !== undefined && <p className="stock-note">{outOfStock ? "This size is currently sold out." : maxAddQuantity === 0 ? "The available quantity is already in your bag." : `${maxAddQuantity} more available in ${selectedSize}.`}</p>}
+        {isPreOrder && <p className="stock-note">Pre-order: pay the full price now. The shipping date will be announced later.</p>}
+        {!isPreOrder && selectedStock !== undefined && <p className="stock-note">{outOfStock ? "This size is currently sold out." : maxAddQuantity === 0 ? "The available quantity is already in your bag." : `${maxAddQuantity} more available in ${selectedSize}.`}</p>}
         {outOfStock && <form className="restock-form" onSubmit={requestRestockAlert}>
           <label htmlFor="restock-email">Get an email when {selectedSize} returns<input id="restock-email" type="email" required autoComplete="email" value={restockEmail} onChange={(event) => setRestockEmail(event.target.value)} /></label>
           <button type="submit" disabled={isRequestingRestock}>{isRequestingRestock ? "Sending..." : "Notify me"}</button>
@@ -164,8 +168,8 @@ export default function ProductDetail({ product, restockConfirmed = false }: { p
           <span className="product-quantity__limit">Max 10 per variant</span>
         </div>
         <p className="product-info__placement">A3 DTF print fits perfectly on 2XL for the ultimate oversized look. Centered 3 inches below the collar. Size and color preview adjust with your selection.</p>
-        <button className="button button--lime add-button" type="button" onClick={addToBag} disabled={outOfStock || maxAddQuantity === 0}>
-          {outOfStock ? "Sold out" : maxAddQuantity === 0 ? "Maximum in bag" : added ? `Added ${addedQuantity} to bag` : `Add ${quantityToAdd} to bag`}<span aria-hidden="true">{added ? "✓" : "↗"}</span>
+        <button className="button button--lime add-button" type="button" onClick={addToBag} disabled={outOfStock || maxAddQuantity === 0 || (isUpcoming && !isPreOrder)}>
+          {isUpcoming && !isPreOrder ? "Coming soon" : outOfStock ? "Sold out" : maxAddQuantity === 0 ? "Maximum in bag" : added ? `Added ${addedQuantity} to bag` : isPreOrder ? "Pre-order now" : `Add ${quantityToAdd} to bag`}<span aria-hidden="true">{added ? "✓" : "↗"}</span>
         </button>
         <p className="product-info__shipping">Complimentary Ghana shipping on orders over GH₵100</p>
       </div>

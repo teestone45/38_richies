@@ -1,9 +1,10 @@
 import { formatCurrency } from "@/lib/currency";
 import { generateOrderReference, getOrderTrackingUrl } from "@/lib/order-reference";
+import { isComingSoon, isPreOrderAvailable } from "@/lib/product-availability";
 import { getProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
-type PaystackCartItem = { slug: string; size: string; color: string; quantity: number; unitAmount: number };
+type PaystackCartItem = { slug: string; size: string; color: string; quantity: number; unitAmount: number; preOrder?: boolean };
 type PaystackMetadata = {
   items?: PaystackCartItem[];
   shippingAddress?: string;
@@ -22,7 +23,7 @@ type PaystackTransaction = {
   metadata?: string | PaystackMetadata | null;
   customer?: { email?: string | null };
 };
-type SanityProduct = { _id: string; _rev: string; title: string; dropName?: string; sizes?: string[]; inventory?: { size: string; quantity: number }[] };
+type SanityProduct = { _id: string; _rev: string; title: string; dropName?: string; badge?: string; comingSoon?: boolean; preOrderEnabled?: boolean; sizes?: string[]; inventory?: { size: string; quantity: number }[] };
 
 function parseMetadata(value: PaystackTransaction["metadata"]): PaystackMetadata | null {
   try {
@@ -59,7 +60,7 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
   const items: PaystackCartItem[] = [];
   let subtotal = 0;
   for (const item of cartItems) {
-    if (!item || typeof item.slug !== "string" || typeof item.size !== "string" || typeof item.color !== "string" || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10 || !Number.isInteger(item.unitAmount) || item.unitAmount < 1) {
+    if (!item || typeof item.slug !== "string" || typeof item.size !== "string" || typeof item.color !== "string" || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10 || !Number.isInteger(item.unitAmount) || item.unitAmount < 1 || (item.preOrder !== undefined && typeof item.preOrder !== "boolean")) {
       throw new Error("Paystack transaction item metadata is invalid.");
     }
     items.push(item);
@@ -85,18 +86,33 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
   });
   if (priorOrder) return { duplicate: true, orderNumber: priorOrder.orderNumber ?? orderNumber };
 
-  const orderItems: { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number; dropName?: string }[] = [];
+  const orderItems: { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number; dropName?: string; preOrder?: boolean }[] = [];
   const inventoryByProduct = new Map<string, { product: SanityProduct; quantities: Map<string, number> }>();
   let inventoryIssue = false;
 
   for (const item of items) {
-    const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, dropName, sizes, inventory}`, { slug: item.slug });
+    const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, dropName, badge, comingSoon, preOrderEnabled, sizes, inventory}`, { slug: item.slug });
     const catalogProduct = product ? undefined : await getProductBySlug(item.slug);
     if (!product && !catalogProduct) inventoryIssue = true;
     if ((product?.sizes ?? catalogProduct?.sizes) && !(product?.sizes ?? catalogProduct?.sizes)?.includes(item.size)) inventoryIssue = true;
-    orderItems.push({ productId: item.slug, title: product?.title ?? catalogProduct?.title ?? item.slug, size: item.size, color: item.color, quantity: item.quantity, unitAmount: item.unitAmount, ...(product?.dropName ?? catalogProduct?.dropName ? { dropName: product?.dropName ?? catalogProduct?.dropName } : {}) });
+    const availabilityProduct = product ?? catalogProduct;
+    const currentlyComingSoon = availabilityProduct ? isComingSoon({
+      title: availabilityProduct.title ?? item.slug,
+      slug: item.slug,
+      badge: availabilityProduct.badge ?? "",
+      comingSoon: availabilityProduct.comingSoon,
+    }) : false;
+    const currentlyPreOrderAvailable = availabilityProduct ? isPreOrderAvailable({
+      title: availabilityProduct.title ?? item.slug,
+      slug: item.slug,
+      badge: availabilityProduct.badge ?? "",
+      comingSoon: availabilityProduct.comingSoon,
+      preOrderEnabled: availabilityProduct.preOrderEnabled,
+    }) : false;
+    if ((item.preOrder && !currentlyPreOrderAvailable) || (!item.preOrder && currentlyComingSoon)) inventoryIssue = true;
+    orderItems.push({ productId: item.slug, title: product?.title ?? catalogProduct?.title ?? item.slug, size: item.size, color: item.color, quantity: item.quantity, unitAmount: item.unitAmount, ...(product?.dropName ?? catalogProduct?.dropName ? { dropName: product?.dropName ?? catalogProduct?.dropName } : {}), ...(item.preOrder ? { preOrder: true } : {}) });
 
-    if (!product?.inventory) continue;
+    if ((item.preOrder && currentlyPreOrderAvailable) || !product?.inventory) continue;
     const quantities = inventoryByProduct.get(product._id)?.quantities ?? new Map<string, number>();
     quantities.set(item.size, (quantities.get(item.size) ?? 0) + item.quantity);
     inventoryByProduct.set(product._id, { product, quantities });
@@ -169,7 +185,7 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
         from: process.env.ORDER_EMAIL_FROM,
         to: [email],
         subject: `38 RICHES order ${orderNumber}`,
-        text: `Thanks for your order. Your paid order total is ${formatCurrency(transaction.amount / 100, "GHS")}. Order number: ${orderNumber}.${trackingUrl ? ` Track your order: ${trackingUrl}` : ""}`,
+        text: `Thanks for your order. Your paid order total is ${formatCurrency(transaction.amount / 100, "GHS")}.${items.some((item) => item.preOrder) ? " Pre-order items are paid in full; their shipping date will be announced later." : ""} Order number: ${orderNumber}.${trackingUrl ? ` Track your order: ${trackingUrl}` : ""}`,
       }),
     });
     if (emailResponse.ok) await sanity.patch(orderId).set({ emailNotifiedAt: new Date().toISOString() }).commit();

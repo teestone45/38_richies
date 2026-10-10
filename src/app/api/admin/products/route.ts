@@ -18,6 +18,7 @@ const adminProductsQuery = `*[_type == "product"] | order(_createdAt desc) {
   inventory,
   featured,
   comingSoon,
+  preOrderEnabled,
   dtfPlacement,
   fabric,
   dropName,
@@ -47,6 +48,7 @@ export async function GET(request: Request) {
         price: product.priceCents / 100,
         active: true,
         comingSoon: product.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${product.title} ${product.slug} ${product.badge}`),
+        preOrderEnabled: product.preOrderEnabled ?? false,
       })),
       canManageProducts: false,
       storageMessage: "Showing the starter catalog. Connect Sanity to save product edits, uploads, or deletions.",
@@ -69,6 +71,7 @@ export async function GET(request: Request) {
         price: starter.priceCents / 100,
         active: true,
         comingSoon: starter.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${starter.title} ${starter.slug} ${starter.badge}`),
+        preOrderEnabled: starter.preOrderEnabled ?? false,
       });
     }
 
@@ -76,6 +79,7 @@ export async function GET(request: Request) {
       if (!starterSlugs.has(product.slug) && !product.removed) products.push({
         ...product,
         comingSoon: typeof product.comingSoon === "boolean" ? product.comingSoon : /\bcoming[\s-]+(?:soon|up)\b/i.test(`${String(product.title ?? "")} ${product.slug} ${String(product.badge ?? "")}`),
+        preOrderEnabled: product.preOrderEnabled === true,
       });
     }
 
@@ -117,6 +121,7 @@ export async function POST(request: Request) {
   const active = form.get("active") === "true";
   const featured = form.get("featured") === "true";
   const comingSoon = form.get("comingSoon") === "true";
+  const preOrderEnabled = form.get("preOrderEnabled") === "true";
   const images = [...form.getAll("images"), ...form.getAll("image")].filter((file): file is File => file instanceof File && file.size > 0);
 
   if (!title || title.length > 120 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !Number.isFinite(price) || price <= 0 || price > 10000 || Number(price.toFixed(2)) !== price || !category || sizes.length === 0 || sizes.length > 12 || colors.length > 12 || !["DTF", "DTG", "Embroidered"].includes(printMethod)) {
@@ -154,6 +159,7 @@ export async function POST(request: Request) {
       printMethod,
       featured,
       comingSoon,
+      preOrderEnabled: comingSoon && preOrderEnabled,
       active,
     });
     revalidatePath("/");

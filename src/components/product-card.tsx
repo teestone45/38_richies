@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import type { Product } from "@/lib/products";
+import { isComingSoon, isPreOrderAvailable } from "@/lib/product-availability";
 
 export default function ProductCard({ product, isFavorite, onToggleFavorite }: { product: Product; isFavorite: boolean; onToggleFavorite: (slug: string) => void }) {
+  const preOrder = isPreOrderAvailable(product);
+  const comingSoon = isComingSoon(product);
   return (
     <article className="product-card">
       <div className="product-card__image-wrap">
@@ -10,7 +13,9 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }: {
           <div className="product-card__image" style={{ backgroundImage: `url("${product.image}")` }} role="img" aria-label={`${product.title} product photo`} />
           {product.featured && <span className="product-card__featured">FEATURED</span>}
           <span className="product-card__label">{product.badge}</span>
-          {product.inventory && <span className="product-card__stock">{Object.values(product.inventory).reduce((total, quantity) => total + quantity, 0) === 0 ? "SOLD OUT" : "LIMITED STOCK"}</span>}
+          {preOrder && <span className="product-card__stock">PRE-ORDER OPEN</span>}
+          {comingSoon && !preOrder && <span className="product-card__stock">COMING SOON</span>}
+          {!comingSoon && product.inventory && <span className="product-card__stock">{Object.values(product.inventory).reduce((total, quantity) => total + quantity, 0) === 0 ? "SOLD OUT" : "LIMITED STOCK"}</span>}
         </Link>
         <button className="product-card__favorite" type="button" aria-label={`${isFavorite ? "Remove" : "Save"} ${product.title} ${isFavorite ? "from" : "to"} saved pieces`} aria-pressed={isFavorite} onClick={() => onToggleFavorite(product.slug)}><span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span></button>
       </div>

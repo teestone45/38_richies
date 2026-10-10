@@ -86,7 +86,7 @@ export default function CartView() {
               <li className="cart-row" key={`${item.productId}-${item.size}-${item.color ?? "Default"}`}>
                 <div className="cart-row__image" style={{ backgroundImage: `url("${item.image}")` }} role="img" aria-label={item.title} />
                 <div className="cart-row__info">
-                  <h2>{item.title}</h2><p>Color / {item.color ?? "Default"} · Size / {item.size} · {formatPrice(item.priceCents)}</p>
+                  <h2>{item.title}</h2><p>Color / {item.color ?? "Default"} · Size / {item.size} · {formatPrice(item.priceCents)}{item.preOrder ? " · PRE-ORDER" : ""}</p>
                   <div className="cart-row__actions" aria-label={`Quantity for ${item.title}`}>
                     <button type="button" aria-label="Decrease quantity" onClick={() => setQuantity(item.productId, item.size, item.quantity - 1, item.color)}>−</button>
                     <span>{item.quantity}</span>
@@ -98,6 +98,7 @@ export default function CartView() {
               </li>
             ))}
           </ul>
+          {items.some((item) => item.preOrder) && <p className="cart-summary__shipping">Pre-orders are charged in full today. Shipping dates will be announced later.</p>}
           <form className="cart-summary" onSubmit={beginCheckout}>
             <fieldset className="cart-checkout-details">
               <legend>GHANA DELIVERY DETAILS</legend>
@@ -121,7 +122,7 @@ export default function CartView() {
             <p className="cart-summary__line cart-summary__line--total"><span>Total</span><span>{formatPrice(activeDiscount?.total ?? subtotal + shipping)}</span></p>
             <p className="cart-summary__shipping">Shipping is added securely at checkout. Complimentary Ghana shipping over GH₵100.</p>
             <button className="button button--lime" type="submit" disabled={isCheckingOut}>
-              {isCheckingOut ? "Opening Paystack checkout..." : "Pay securely with Paystack"}<span aria-hidden="true">↗</span>
+              {isCheckingOut ? "Opening Paystack checkout..." : items.some((item) => item.preOrder) ? "Pay in full with Paystack" : "Pay securely with Paystack"}<span aria-hidden="true">↗</span>
             </button>
             {checkoutError && <p className="cart-error" role="alert">{checkoutError}</p>}
           </form>

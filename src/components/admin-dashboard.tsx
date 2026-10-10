@@ -29,6 +29,7 @@ type AdminProduct = {
   inventory?: Record<string, number>;
   featured: boolean;
   comingSoon: boolean;
+  preOrderEnabled: boolean;
 };
 
 type AdminOrder = {
@@ -38,7 +39,7 @@ type AdminOrder = {
   paymentReference?: string;
   stripeSessionId?: string;
   email: string;
-  items: { productId: string; title: string; size: string; color?: string; quantity: number; unitAmount: number }[];
+  items: { productId: string; title: string; size: string; color?: string; quantity: number; unitAmount: number; preOrder?: boolean }[];
   amountTotal: number;
   currency: string;
   couponCode?: string;
@@ -102,6 +103,7 @@ function toEditorProducts(products: ApiResponse["products"] = []): AdminProduct[
       inventory,
       featured: product.featured ?? false,
       comingSoon: product.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${product.title} ${product.slug} ${product.badge}`),
+      preOrderEnabled: product.preOrderEnabled ?? false,
       priceValue: Number(product.price).toFixed(2),
     };
   });
@@ -299,7 +301,7 @@ export default function AdminDashboard() {
       const response = await fetch(`/api/admin/products/${encodeURIComponent(product._id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price: Number(product.priceValue), active: product.active, featured: product.featured, comingSoon: product.comingSoon, colors: product.colors ?? [], stock: product.inventory ? Object.entries(product.inventory).map(([size, quantity]) => ({ size, quantity })) : [] }),
+        body: JSON.stringify({ price: Number(product.priceValue), active: product.active, featured: product.featured, comingSoon: product.comingSoon, preOrderEnabled: product.comingSoon && product.preOrderEnabled, colors: product.colors ?? [], stock: product.inventory ? Object.entries(product.inventory).map(([size, quantity]) => ({ size, quantity })) : [] }),
       });
       const result = await readResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Could not save product changes.");
@@ -736,7 +738,7 @@ export default function AdminDashboard() {
               <article className="admin-product-row" key={product._id}>
                 <input className="admin-product-select" type="checkbox" aria-label={`Select ${product.title}`} checked={selectedIds.includes(product._id)} onChange={() => toggleProductSelection(product._id)} />
                 <div className="admin-product-row__image" style={{ backgroundImage: product.image ? `url("${product.image}")` : undefined }} role="img" aria-label={`${product.title} photo`} />
-                <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.sizes.join(" / ")}</p></div>
+                <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.sizes.join(" / ")}{product.preOrderEnabled ? " · PRE-ORDER OPEN" : ""}</p></div>
                 <label className="admin-product-row__price">PRICE (GHS)<input aria-label={`Price in GHS for ${product.title}`} type="number" min="0.01" max="10000" step="0.01" value={product.priceValue} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { priceValue: event.target.value })} /></label>
                 <label className="admin-product-row__status">STATUS<select aria-label={`Status for ${product.title}`} value={product.active ? "true" : "false"} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { active: event.target.value === "true" })}><option value="true">Live</option><option value="false">Draft</option></select></label>
                 <div className="admin-product-row__commands">
@@ -754,6 +756,8 @@ export default function AdminDashboard() {
                     <label>Available colors<input name="colors" defaultValue={product.colors?.join(", ") ?? ""} placeholder="Black, Cream" /></label>
                     <label>Available sizes<input name="sizes" required defaultValue={product.sizes.join(", ")} /></label>
                     <label>Stock by size<input name="stock" defaultValue={Object.entries(product.inventory ?? {}).map(([size, quantity]) => `${size}:${quantity}`).join(", ")} placeholder="XL:4, 2XL:2" /><small>Blank means untracked stock.</small></label>
+                    <label>Coming Soon<select name="comingSoon" defaultValue={product.comingSoon ? "true" : "false"}><option value="false">No — available</option><option value="true">Yes — upcoming</option></select></label>
+                    <label>Pre-orders<select name="preOrderEnabled" defaultValue={product.preOrderEnabled ? "true" : "false"}><option value="false">Closed</option><option value="true">Open — charge full price</option></select><small>Only applies while Coming Soon is enabled.</small></label>
                     <label>Print method<select name="printMethod" defaultValue={product.printMethod}><option>DTF</option><option>DTG</option><option>Embroidered</option></select></label>
                     <label>Feature product<select name="featured" defaultValue={product.featured ? "true" : "false"}><option value="false">Standard</option><option value="true">Featured</option></select></label>
                     <label>Print placement<input name="dtfPlacement" maxLength={160} defaultValue={product.dtfPlacement} /></label>
@@ -776,13 +780,14 @@ export default function AdminDashboard() {
       {activeAdminView === "coming-soon" && <>
         <section className="admin-section" aria-labelledby="coming-soon-create-title">
           <div className="admin-section__heading"><div><p className="eyebrow">UPCOMING DROP</p><h2 id="coming-soon-create-title">ADD COMING SOON PIECE</h2></div><span>NOT FOR SALE</span></div>
-          <p className="admin-ai-note">Products added here appear in the storefront&apos;s Coming Soon section and cannot be purchased until you make them available.</p>
+          <p className="admin-ai-note">Enable pre-orders per product below. Customers pay the full price now; shipping dates will be announced later.</p>
           <form className="admin-product-form admin-product-form--studio" onSubmit={publishManualUpload}>
             <div className="admin-image-generator">
               <label htmlFor="coming-soon-title">Product name<input id="coming-soon-title" type="text" value={manualUploadTitle} onChange={(event) => setManualUploadTitle(event.target.value)} placeholder="Next drop hoodie" required /></label>
               <label htmlFor="coming-soon-price">Price (GHS)<input id="coming-soon-price" type="number" min="0.01" step="0.01" value={manualUploadPrice} onChange={(event) => setManualUploadPrice(event.target.value)} required /></label>
               <label htmlFor="coming-soon-category">Category<input id="coming-soon-category" type="text" value={manualUploadCategory} onChange={(event) => setManualUploadCategory(event.target.value)} placeholder="Hoodie" /></label>
               <label htmlFor="coming-soon-description">Description<textarea id="coming-soon-description" rows={3} value={manualUploadDescription} onChange={(event) => setManualUploadDescription(event.target.value)} placeholder="Details about this upcoming piece." /></label>
+              <label htmlFor="coming-soon-preorder">Pre-orders<select id="coming-soon-preorder" name="preOrderEnabled" defaultValue="false"><option value="false">Closed</option><option value="true">Open — charge full price</option></select></label>
               <label className="admin-artwork-upload" htmlFor="coming-soon-images">Product photos<input id="coming-soon-images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => setManualUploadFiles(Array.from(event.currentTarget.files ?? []))} required /><small>{manualUploadFiles.length ? `${manualUploadFiles.length} image(s) selected` : "JPG, PNG, or WebP."}</small></label>
             </div>
             <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isQuickUploading || !canManageProducts || !manualUploadTitle.trim() || !manualUploadFiles.length}>{isQuickUploading ? "Adding..." : "Add to Coming Soon"}<span aria-hidden="true">↗</span></button></div>
@@ -793,7 +798,7 @@ export default function AdminDashboard() {
           {comingSoonProducts.length === 0 ? <p className="admin-empty">No upcoming products yet. Add one above.</p> : <div className="admin-product-list">
             {comingSoonProducts.map((product) => <article className="admin-product-row" key={product._id}>
               <div className="admin-product-row__image" style={{ backgroundImage: product.image ? `url("${product.image}")` : undefined }} role="img" aria-label={`${product.title} photo`} />
-              <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.category}</p></div>
+              <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.category} · {product.preOrderEnabled ? "PRE-ORDER OPEN" : "PRE-ORDER CLOSED"}</p></div>
               <label className="admin-product-row__price">PRICE (GHS)<input aria-label={`Price in GHS for ${product.title}`} type="number" min="0.01" max="10000" step="0.01" value={product.priceValue} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { priceValue: event.target.value })} /></label>
               <div className="admin-product-row__commands">
                 <button className="admin-save" type="button" onClick={() => saveProduct(product)} disabled={!canManageProducts || savingId === product._id}>{savingId === product._id ? "Saving..." : "Save"}</button>
@@ -810,6 +815,7 @@ export default function AdminDashboard() {
                 <label>Available sizes<input name="sizes" required defaultValue={product.sizes.join(", ")} /></label>
                 <label>Stock by size<input name="stock" defaultValue={Object.entries(product.inventory ?? {}).map(([size, quantity]) => `${size}:${quantity}`).join(", ")} placeholder="XL:4, 2XL:2" /><small>Blank means untracked stock.</small></label>
                 <label>Coming Soon<select name="comingSoon" defaultValue="true"><option value="true">Yes — upcoming</option><option value="false">No — available</option></select></label>
+                <label>Pre-orders<select name="preOrderEnabled" defaultValue={product.preOrderEnabled ? "true" : "false"}><option value="false">Closed</option><option value="true">Open — charge full price</option></select><small>Pre-orders are paid in full; shipping date to be announced.</small></label>
                 <label>Print method<select name="printMethod" defaultValue={product.printMethod}><option>DTF</option><option>DTG</option><option>Embroidered</option></select></label>
                 <label>Feature product<select name="featured" defaultValue={product.featured ? "true" : "false"}><option value="false">Standard</option><option value="true">Featured</option></select></label>
                 <label>Print placement<input name="dtfPlacement" maxLength={160} defaultValue={product.dtfPlacement} /></label>
@@ -831,7 +837,7 @@ export default function AdminDashboard() {
         {orders.length === 0 ? <p className="admin-empty">No paid orders yet. Verified Paystack payments will appear here after the webhook is configured.</p> : <div className="admin-order-list">
           {orders.map((order) => <article className="admin-order-row" key={order._id}>
             <div className="admin-order-row__summary"><strong>{order.orderNumber ?? (order.paymentReference ?? order.stripeSessionId ?? order._id).replace(/^cs_/, "ORDER ").slice(0, 24)}</strong><span>{(order.paymentProvider ?? "stripe").toUpperCase()}</span><span>{new Date(order.createdAt).toLocaleString()}</span><span>{order.email || "No email provided"}</span>{order.couponCode && <span>{order.couponCode} · −{formatCurrency((order.discountAmount ?? 0) / 100)}</span>}<span>{formatCurrency(order.amountTotal / 100, order.currency || "GHS")}</span></div>
-            <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}</span>)}</div>
+            <div className="admin-order-row__items">{order.items.map((item, index) => <span key={`${item.productId}-${item.size}-${item.color ?? "Default"}-${index}`}>{item.quantity} × {item.title} / {item.size} / {item.color ?? "Default"}{item.preOrder ? " / PRE-ORDER — SHIP DATE TO BE ANNOUNCED" : ""}</span>)}</div>
             <p className="admin-order-row__address">{order.shippingAddress}</p>
             <div className="admin-order-row__controls">
               <label>FULFILLMENT<select value={order.status} onChange={(event) => updateOrder(order, { status: event.target.value })}><option value="paid">Paid</option><option value="packing">Packing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option><option value="inventory_issue">Inventory issue</option></select></label>

@@ -1,11 +1,12 @@
 import Stripe from "stripe";
 import { formatCurrency } from "@/lib/currency";
 import { generateOrderReference, getOrderTrackingUrl } from "@/lib/order-reference";
+import { isComingSoon } from "@/lib/product-availability";
 import { getProductBySlug } from "@/lib/products";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
 
 type StockVariant = { size: string; quantity: number };
-type SanityProduct = { _id: string; _rev: string; title: string; dropName?: string; inventory?: StockVariant[] };
+type SanityProduct = { _id: string; _rev: string; title: string; dropName?: string; badge?: string; comingSoon?: boolean; inventory?: StockVariant[] };
 type OrderLine = { productId: string; title: string; size: string; color: string; quantity: number; unitAmount: number; dropName?: string };
 
 export async function POST(request: Request) {
@@ -50,12 +51,19 @@ export async function POST(request: Request) {
       const color = colorValue && colorValue.trim() ? colorValue.trim() : "Default";
       if (!slug || !size || !Number.isInteger(quantity) || quantity < 1) return Response.json({ error: "Checkout item metadata is invalid." }, { status: 400 });
 
-      const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, dropName, inventory}`, { slug });
+      const product = await sanity.fetch<SanityProduct | null>(`*[_type == "product" && slug.current == $slug && active != false && removed != true][0]{_id, _rev, title, dropName, badge, comingSoon, inventory}`, { slug });
       const catalogProduct = product ? undefined : await getProductBySlug(slug);
       if (!product && !catalogProduct) {
         inventoryIssue = true;
         continue;
       }
+      const availabilityProduct = product ?? catalogProduct;
+      if (availabilityProduct && isComingSoon({
+        title: availabilityProduct.title ?? slug,
+        slug,
+        badge: availabilityProduct.badge ?? "",
+        comingSoon: availabilityProduct.comingSoon,
+      })) inventoryIssue = true;
       const title = product?.title ?? catalogProduct?.title ?? "38 RICHES item";
       const stripePrice = stripeLines.data[index]?.price;
       orderItems.push({

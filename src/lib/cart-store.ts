@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { isPreOrderAvailable } from "@/lib/product-availability";
 import type { Product } from "@/lib/products";
 
 export type CartItem = {
@@ -10,6 +11,7 @@ export type CartItem = {
   size: string;
   color?: string;
   quantity: number;
+  preOrder?: boolean;
 };
 
 type CartStore = {
@@ -31,16 +33,18 @@ export const useCartStore = create<CartStore>()(
         const selectedColor = color ?? product.colors?.[0] ?? "Default";
         const safeQuantity = Number.isFinite(quantity) ? Math.floor(quantity) : 1;
         const requestedQuantity = Math.max(1, Math.min(10, safeQuantity));
-        const maxQuantity = Math.min(10, product.inventory?.[size] ?? 10);
+        const preOrder = isPreOrderAvailable(product);
+        const maxQuantity = Math.min(10, preOrder ? 10 : product.inventory?.[size] ?? 10);
         const existing = state.items.find((item) => item.productId === product.slug && item.size === size && (item.color ?? "Default") === selectedColor);
         if (existing) {
-          return { items: state.items.map((item) => item === existing ? { ...item, quantity: Math.min(item.quantity + requestedQuantity, maxQuantity) } : item) };
+          return { items: state.items.map((item) => item === existing ? { ...item, preOrder, quantity: Math.min(item.quantity + requestedQuantity, maxQuantity) } : item) };
         }
         if (maxQuantity < 1) return { items: state.items };
         return {
           items: [...state.items, {
             productId: product.slug, title: product.title, image: product.image,
             priceCents: product.priceCents, size, color: selectedColor, quantity: Math.min(requestedQuantity, maxQuantity),
+            ...(preOrder ? { preOrder: true } : {}),
           }],
         };
       }),
