@@ -1,4 +1,5 @@
 import { getProductBySlug } from "@/lib/products";
+import { isComingSoon } from "@/lib/product-availability";
 
 export type PricedCartItem = { slug: string; size: string; color: string; quantity: number; unitAmount: number };
 export type CheckoutPricingResult =
@@ -25,6 +26,7 @@ export async function priceCheckoutCart(rawItems: unknown): Promise<CheckoutPric
       productCache.set(item.productId, product);
     }
     if (!product || !product.sizes.includes(item.size)) return { ok: false, status: 400, error: "One of the selected products or sizes is no longer available." };
+    if (isComingSoon(product)) return { ok: false, status: 409, error: `${product.title} is coming soon and cannot be purchased yet.` };
 
     const selectedColor = typeof item.color === "string" && item.color.trim() ? item.color.trim() : product.colors?.[0] ?? "Default";
     if (product.colors?.length && !product.colors.includes(selectedColor)) return { ok: false, status: 400, error: `${product.title} does not offer the selected color.` };

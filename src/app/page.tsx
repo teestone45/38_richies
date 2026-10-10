@@ -5,14 +5,19 @@ import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
 import StoreDashboard from "@/components/store-dashboard";
 import BrandFaq from "@/components/brand-faq";
+import StoreDisclosure from "@/components/store-disclosure";
 import { getProducts } from "@/lib/products";
+import { isComingSoon } from "@/lib/product-availability";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const products = await getProducts();
+  const catalog = await getProducts();
+  const products = catalog.filter((product) => !isComingSoon(product));
+  const upcomingProducts = catalog.filter(isComingSoon);
   const siteUrl = getSiteUrl();
+  const brandImage = "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=2200&q=90";
   const remainingUnits = products.length > 0 && products.every((product) => product.inventory && Object.keys(product.inventory).length > 0)
     ? products.reduce((total, product) => total + Object.values(product.inventory ?? {}).reduce((stock, quantity) => stock + quantity, 0), 0)
     : null;
@@ -32,11 +37,17 @@ export default async function Home() {
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
       <section className="brand-snapshot page-shell" aria-labelledby="brand-snapshot-title">
-        <p className="eyebrow">A GHANAIAN STREETWEAR LABEL</p>
-        <h2 id="brand-snapshot-title">38 RICHES, built from vision.</h2>
-        <p>38 RICHES is a Ghanaian streetwear brand offering premium oversized T-shirts, hoodies, jeans, and selected graphic pieces. Sizes and materials vary by design; check each product page for available options, including XL and 2XL on selected pieces. Selected tees use heavyweight 280 GSM cotton with original A3 DTF prints. The 38 RICHES Fit Builder pairs an available top and bottom, shows the combined price, and adds both pieces to your bag together. Ghana delivery is free on orders of GH₵100 or more after discounts.</p>
-        <Link href="/fit-builder">Try the 38 RICHES Fit Builder <span aria-hidden="true">→</span></Link>
+        {brandImage && <Image className="brand-snapshot__image" src={brandImage} alt="" fill priority unoptimized sizes="89vw" />}
+        <div className="brand-snapshot__content">
+          <p className="eyebrow">A GHANAIAN STREETWEAR LABEL</p>
+          <h2 id="brand-snapshot-title">38 RICHES.<br /><span>Built from vision.</span></h2>
+          <p className="brand-snapshot__lead">Premium oversized streetwear. Ghanaian roots. A point of view that&apos;s all our own.</p>
+          <p>38 RICHES is a Ghanaian streetwear brand offering premium oversized T-shirts, hoodies, jeans, and selected graphic pieces. Sizes and materials vary by design; check each product page for available options, including XL and 2XL on selected pieces. Selected tees use heavyweight 280 GSM cotton with original A3 DTF prints.</p>
+          <p>The 38 RICHES Fit Builder pairs an available top and bottom, shows the combined price, and adds both pieces to your bag together. Ghana delivery is free on orders of GH₵100 or more after discounts.</p>
+          <Link href="/fit-builder">Try the 38 RICHES Fit Builder <span aria-hidden="true">→</span></Link>
+        </div>
       </section>
+      <StoreDisclosure>
       <BrandFaq />
       <StoreDashboard products={products} />
       <FeaturedProductHero products={products} />
@@ -57,6 +68,27 @@ export default async function Home() {
         </div>
         <ProductCollection products={products} />
       </section>
+
+      {upcomingProducts.length > 0 && (
+        <section className="coming-soon-section page-shell" id="coming-soon" aria-labelledby="coming-soon-title">
+          <div className="section-heading">
+            <div><p className="eyebrow">THE NEXT DROP</p><h2 id="coming-soon-title">COMING SOON</h2></div>
+            <p className="section-heading__note">A preview of what&apos;s next.<br />Not available to buy yet.</p>
+          </div>
+          <div className="coming-soon-grid">
+            {upcomingProducts.map((product) => (
+              <article className="coming-soon-card" key={product.slug}>
+                <div className="coming-soon-card__image">
+                  <Image src={product.image} alt={`${product.title} clothing preview`} fill unoptimized sizes="(max-width: 640px) 89vw, 44vw" />
+                  <span>COMING SOON</span>
+                </div>
+                <h3>{product.title}</h3>
+                <p>Release details will be announced here. Follow 38 RICHES for updates.</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="fit-builder-promo page-shell" aria-labelledby="fit-builder-promo-title">
         <div>
@@ -153,6 +185,7 @@ export default async function Home() {
           <a href="https://www.instagram.com/38r_ichies/" target="_blank" rel="noreferrer">INSTAGRAM ↗</a>
         </div>
       </footer>
+      </StoreDisclosure>
     </main>
   );
 }

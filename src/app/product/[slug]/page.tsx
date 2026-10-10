@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import ProductDetail from "@/components/product-detail";
 import { getProductBySlug } from "@/lib/products";
 import { getSiteUrl } from "@/lib/site-url";
+import { isComingSoon } from "@/lib/product-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: PageProps<"/product/[slug]">)
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found", robots: { index: false, follow: false } };
+  if (isComingSoon(product)) return { title: `${product.title} | Upcoming drop`, description: "Preview the next 38 RICHES drop. This piece is not available to purchase yet.", robots: { index: false, follow: true } };
 
   const title = `${product.title} in Ghana`;
   const description = `${product.description} Shop ${product.title} from 38 RICHES Clothing in Ghana for ${formatPriceForMetadata(product.priceCents)}.`;
@@ -34,6 +36,16 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+  if (isComingSoon(product)) {
+    return (
+      <main className="product-page">
+        <p className="eyebrow">THE NEXT DROP</p>
+        <h1>{product.title}</h1>
+        <p>This piece is coming soon and is not available to purchase yet.</p>
+        <Link href="/#coming-soon">Preview upcoming products</Link>
+      </main>
+    );
+  }
 
   const images = product.images.length ? product.images : [product.image];
   const availableUnits = product.inventory ? Object.values(product.inventory).reduce((total, quantity) => total + quantity, 0) : undefined;

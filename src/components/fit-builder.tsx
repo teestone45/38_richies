@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { useCartStore } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/currency";
+import { isComingSoon } from "@/lib/product-availability";
 
 function availableSizes(product: Product) {
   return product.sizes.filter((size) => product.inventory?.[size] === undefined || product.inventory[size] > 0);
@@ -18,8 +19,8 @@ function isAccessory(product: Product) {
 }
 
 export default function FitBuilder({ products }: { products: Product[] }) {
-  const tops = products.filter((product) => !isBottom(product) && !isAccessory(product) && availableSizes(product).length > 0);
-  const bottoms = products.filter((product) => isBottom(product) && availableSizes(product).length > 0);
+  const tops = products.filter((product) => !isComingSoon(product) && !isBottom(product) && !isAccessory(product) && availableSizes(product).length > 0);
+  const bottoms = products.filter((product) => !isComingSoon(product) && isBottom(product) && availableSizes(product).length > 0);
   const initialTop = tops[0];
   const initialBottom = bottoms[0];
   const [topSlug, setTopSlug] = useState(initialTop?.slug ?? "");

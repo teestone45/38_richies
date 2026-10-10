@@ -1,12 +1,13 @@
 import type { MetadataRoute } from "next";
 import { getProducts } from "@/lib/products";
 import { getSiteUrl } from "@/lib/site-url";
+import { isComingSoon } from "@/lib/product-availability";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
-  const products = (await getProducts()).filter((product) => !/^coming soon$/i.test(product.title.trim()));
+  const products = (await getProducts()).filter((product) => !isComingSoon(product));
   return [
     { url: siteUrl.toString(), changeFrequency: "weekly", priority: 1 },
     { url: new URL("/fit-builder", siteUrl).toString(), changeFrequency: "weekly", priority: 0.8 },
