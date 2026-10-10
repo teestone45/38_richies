@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = (await getProducts()).filter((product) => !/^coming soon$/i.test(product.title.trim()));
   return [
     { url: siteUrl.toString(), changeFrequency: "weekly", priority: 1 },
+    { url: new URL("/fit-builder", siteUrl).toString(), changeFrequency: "weekly", priority: 0.8 },
     { url: new URL("/journal", siteUrl).toString(), changeFrequency: "weekly", priority: 0.6 },
     ...products.map((product) => ({
       url: new URL(`/product/${product.slug}`, siteUrl).toString(),

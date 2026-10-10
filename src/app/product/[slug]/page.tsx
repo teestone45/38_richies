@@ -45,10 +45,10 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
     image: images,
     sku: product.slug,
     category: product.category,
+    size: product.sizes,
+    material: product.fabric,
     brand: { "@type": "Brand", name: "38 RICHES" },
     additionalProperty: [
-      { "@type": "PropertyValue", name: "Available sizes", value: product.sizes.join(", ") },
-      { "@type": "PropertyValue", name: "Material", value: product.fabric },
       ...(product.printMethod ? [{ "@type": "PropertyValue", name: "Print method", value: product.printMethod }] : []),
     ],
     offers: {
@@ -58,6 +58,20 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
       price: (product.priceCents / 100).toFixed(2),
       ...(availableUnits === undefined ? {} : { availability: availableUnits > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" }),
       itemCondition: "https://schema.org/NewCondition",
+      shippingDetails: [
+        {
+          "@type": "OfferShippingDetails",
+          shippingRate: { "@type": "MonetaryAmount", value: "0.00", currency: "GHS" },
+          shippingDestination: { "@type": "DefinedRegion", addressCountry: "GH" },
+          eligibleTransactionVolume: { "@type": "PriceSpecification", priceCurrency: "GHS", minPrice: "100.00" },
+        },
+        {
+          "@type": "OfferShippingDetails",
+          shippingRate: { "@type": "MonetaryAmount", value: "8.00", currency: "GHS" },
+          shippingDestination: { "@type": "DefinedRegion", addressCountry: "GH" },
+          eligibleTransactionVolume: { "@type": "PriceSpecification", priceCurrency: "GHS", maxPrice: "99.99" },
+        },
+      ],
     },
   }).replace(/</g, "\\u003c");
 

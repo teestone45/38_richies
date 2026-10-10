@@ -39,7 +39,16 @@ export default function FitBuilder({ products }: { products: Product[] }) {
     window.setTimeout(() => setAdded(false), 1800);
   }
 
-  if (!top || !bottom) return null;
+  if (!top || !bottom) {
+    return (
+      <section className="fit-builder page-shell" aria-labelledby="fit-builder-title">
+        <div className="fit-builder__heading">
+          <div><p className="eyebrow">THE 38 RICHES FIT BUILDER</p><h2 id="fit-builder-title">PUT THE FIT<br />TOGETHER.</h2></div>
+          <p>The Fit Builder needs an available top and bottom. Check back as the collection updates.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="fit-builder page-shell" aria-labelledby="fit-builder-title">

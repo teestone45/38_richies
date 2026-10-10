@@ -52,7 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <div className="announcement">Complimentary Ghana shipping on orders over GH₵100</div>
+        <div className="announcement">Complimentary Ghana shipping on orders of GH₵100 or more</div>
         <SiteHeader />
         {children}
         <SupportChat />

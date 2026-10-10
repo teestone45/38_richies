@@ -5,6 +5,7 @@ import FitBuilder from "@/components/fit-builder";
 import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
 import StoreDashboard from "@/components/store-dashboard";
+import BrandFaq from "@/components/brand-faq";
 import { getProducts } from "@/lib/products";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -29,6 +30,12 @@ export default async function Home() {
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
       <StoreDashboard products={products} />
+      <section className="brand-snapshot page-shell" aria-labelledby="brand-snapshot-title">
+        <p className="eyebrow">A GHANAIAN STREETWEAR LABEL</p>
+        <h2 id="brand-snapshot-title">38 RICHES, built from vision.</h2>
+        <p>38 RICHES is a Ghana-based clothing brand offering premium oversized streetwear, including T-shirts, hoodies, jeans, and selected graphic pieces. Product sizes and materials vary by design and are listed on each product page. The 38 RICHES Fit Builder lets you pair an available top and bottom, compare the combined price, and add both pieces to your bag together. Ghana delivery is free on orders of GH₵100 or more after discounts; contact us to ask about international delivery.</p>
+        <Link href="/fit-builder">Explore the Fit Builder <span aria-hidden="true">↗</span></Link>
+      </section>
       <FeaturedProductHero products={products} />
 
       <section className="ticker" aria-label="Brand statement">
@@ -46,6 +53,7 @@ export default async function Home() {
       </section>
 
       <FitBuilder products={products} />
+      <p className="fit-builder-page-link page-shell"><Link href="/fit-builder">Open the full 38 RICHES Fit Builder <span aria-hidden="true">↗</span></Link></p>
 
       <section className="feature-band page-shell" aria-label="Brand benefits">
         <article>
@@ -56,7 +64,7 @@ export default async function Home() {
         <article>
           <span>02</span>
           <h3>Fast local delivery</h3>
-          <p>Quick Ghana shipping on orders above GH₵100, with transparent tracking.</p>
+          <p>Free Ghana shipping on orders of GH₵100 or more, with transparent tracking.</p>
         </article>
         <article>
           <span>03</span>
@@ -114,6 +122,7 @@ export default async function Home() {
       </section>
 
       <NewsletterSignup />
+      <BrandFaq />
 
       <section className="details-strip page-shell" aria-label="Product details">
         <div><span>01</span><p>Heavyweight<br />280 GSM cotton</p></div>
