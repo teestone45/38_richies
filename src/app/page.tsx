@@ -47,7 +47,6 @@ export default async function Home() {
           <Link href="/fit-builder">Try the 38 RICHES Fit Builder <span aria-hidden="true">→</span></Link>
         </div>
       </section>
-      <StoreDisclosure>
       <section className="shop-section page-shell" id="shop">
         <div className="section-heading">
           <div><p className="eyebrow">THE FIRST DROP / 001</p><h2>THE ROTATION</h2></div>
@@ -81,7 +80,6 @@ export default async function Home() {
       )}
       <StoreDashboard products={products} />
       <FeaturedProductHero products={products} />
-      </StoreDisclosure>
 
       <StoreDisclosure title="About 38 RICHES & FAQs" description="Brand story, sizing, shipping, Fit Builder, and drop updates">
       <BrandFaq />
