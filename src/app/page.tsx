@@ -84,6 +84,7 @@ export default async function Home() {
       )}
       </StoreDisclosure>
 
+      <StoreDisclosure title="About 38 RICHES & FAQs" description="Brand story, sizing, shipping, Fit Builder, and drop updates">
       <BrandFaq />
       <section className="ticker" aria-label="Brand statement">
         <div className="ticker__track">
@@ -175,6 +176,7 @@ export default async function Home() {
         <Link href="#shop">Find your piece <span aria-hidden="true">↗</span></Link>
       </section>
       <p className="home-journal-link page-shell"><Link href="/journal">Explore the drop journal <span aria-hidden="true">↗</span></Link></p>
+      </StoreDisclosure>
       <footer className="site-footer">
         <Link className="wordmark" href="/" aria-label="38 RICHES home"><Image src="/images/38-richies-embroidered.svg" alt="38 RICHIES" width={54} height={42} /></Link>
         <p>© 2026 38 RICHES. MOVE DIFFERENT.</p>

@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-export default function StoreDisclosure({ children }: { children: ReactNode }) {
+export default function StoreDisclosure({
+  children,
+  title = "Explore the store",
+  description = "Shop the collection and preview upcoming drops",
+}: { children: ReactNode; title?: string; description?: string }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
@@ -23,7 +27,7 @@ export default function StoreDisclosure({ children }: { children: ReactNode }) {
   return (
     <details className="store-disclosure" ref={detailsRef}>
       <summary className="store-disclosure__trigger page-shell">
-        <span><strong>Explore the store</strong><small>Shop the collection and preview upcoming drops</small></span>
+        <span><strong>{title}</strong><small>{description}</small></span>
         <span className="store-disclosure__icon" aria-hidden="true">+</span>
       </summary>
       {children}
