@@ -126,7 +126,7 @@ export default function FeaturedProductHero({ products }: { products: Product[] 
       </div>
       <div className="feature-hero__footer">
         <span>MORE THAN CLOTHES. IT’S 38 RICHES.</span>
-        <a href="https://www.tiktok.com/@38richies0" target="_blank" rel="noreferrer">TIKTOK @38RICHIES0 ↗</a>
+        <a href="https://www.tiktok.com/@38richies0?is_from_webapp=1&amp;sender_device=pc" target="_blank" rel="noreferrer">TIKTOK @38RICHIES0 ↗</a>
       </div>
     </section>
   );

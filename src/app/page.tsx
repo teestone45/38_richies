@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import FeaturedProductHero from "@/components/featured-product-hero";
-import FitBuilder from "@/components/fit-builder";
 import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
 import StoreDashboard from "@/components/store-dashboard";
@@ -14,6 +13,9 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const products = await getProducts();
   const siteUrl = getSiteUrl();
+  const remainingUnits = products.length > 0 && products.every((product) => product.inventory && Object.keys(product.inventory).length > 0)
+    ? products.reduce((total, product) => total + Object.values(product.inventory ?? {}).reduce((stock, quantity) => stock + quantity, 0), 0)
+    : null;
   const structuredData = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "ClothingStore",
@@ -21,21 +23,22 @@ export default async function Home() {
     alternateName: ["38 RICHIES Clothing", "38 Richies clothng"],
     url: siteUrl.toString(),
     logo: new URL("/images/38-richies-embroidered.svg", siteUrl).toString(),
-    description: "Premium streetwear and clothing in Ghana, including graphic tees, hoodies, shorts, and jeans. Follow 38 Richies on TikTok @38richies0.",
+    description: "38 RICHES is a Ghana-based streetwear label offering T-shirts, hoodies, jeans, and selected graphic pieces. Product sizes and materials are listed by design.",
     areaServed: { "@type": "Country", name: "Ghana" },
-    sameAs: ["https://www.tiktok.com/@38richies0"],
+    sameAs: ["https://www.tiktok.com/@38richies0", "https://www.instagram.com/38r_ichies/"],
   }).replace(/</g, "\\u003c");
 
   return (
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
-      <StoreDashboard products={products} />
       <section className="brand-snapshot page-shell" aria-labelledby="brand-snapshot-title">
         <p className="eyebrow">A GHANAIAN STREETWEAR LABEL</p>
         <h2 id="brand-snapshot-title">38 RICHES, built from vision.</h2>
-        <p>38 RICHES is a Ghana-based clothing brand offering premium oversized streetwear, including T-shirts, hoodies, jeans, and selected graphic pieces. Product sizes and materials vary by design and are listed on each product page. The 38 RICHES Fit Builder lets you pair an available top and bottom, compare the combined price, and add both pieces to your bag together. Ghana delivery is free on orders of GH₵100 or more after discounts; contact us to ask about international delivery.</p>
-        <Link href="/fit-builder">Explore the Fit Builder <span aria-hidden="true">↗</span></Link>
+        <p>38 RICHES is a Ghanaian streetwear brand offering premium oversized T-shirts, hoodies, jeans, and selected graphic pieces. Sizes and materials vary by design; check each product page for available options, including XL and 2XL on selected pieces. Selected tees use heavyweight 280 GSM cotton with original A3 DTF prints. The 38 RICHES Fit Builder pairs an available top and bottom, shows the combined price, and adds both pieces to your bag together. Ghana delivery is free on orders of GH₵100 or more after discounts.</p>
+        <Link href="/fit-builder">Try the 38 RICHES Fit Builder <span aria-hidden="true">→</span></Link>
       </section>
+      <BrandFaq />
+      <StoreDashboard products={products} />
       <FeaturedProductHero products={products} />
 
       <section className="ticker" aria-label="Brand statement">
@@ -47,13 +50,22 @@ export default async function Home() {
       <section className="shop-section page-shell" id="shop">
         <div className="section-heading">
           <div><p className="eyebrow">THE FIRST DROP / 001</p><h2>THE ROTATION</h2></div>
-          <p className="section-heading__note">Small run. Heavy feel.<br />Find your uniform.</p>
+          <div className="section-heading__aside">
+            <p className="section-heading__note">Small run. Heavy feel.<br />Find your uniform.</p>
+            {remainingUnits !== null && <p className="rotation-stock">{remainingUnits} TRACKED UNITS AVAILABLE</p>}
+          </div>
         </div>
         <ProductCollection products={products} />
       </section>
 
-      <FitBuilder products={products} />
-      <p className="fit-builder-page-link page-shell"><Link href="/fit-builder">Open the full 38 RICHES Fit Builder <span aria-hidden="true">↗</span></Link></p>
+      <section className="fit-builder-promo page-shell" aria-labelledby="fit-builder-promo-title">
+        <div>
+          <p className="eyebrow">BUILD THE FULL LOOK</p>
+          <h2 id="fit-builder-promo-title">One fit. Your choices.</h2>
+          <p>Pair an available top and bottom, compare the total, and add both pieces to your bag in one step.</p>
+        </div>
+        <Link href="/fit-builder">Try the 38 RICHES Fit Builder <span aria-hidden="true">→</span></Link>
+      </section>
 
       <section className="feature-band page-shell" aria-label="Brand benefits">
         <article>
@@ -122,7 +134,6 @@ export default async function Home() {
       </section>
 
       <NewsletterSignup />
-      <BrandFaq />
 
       <section className="details-strip page-shell" aria-label="Product details">
         <div><span>01</span><p>Heavyweight<br />280 GSM cotton</p></div>
@@ -136,7 +147,11 @@ export default async function Home() {
         <p>© 2026 38 RICHES. MOVE DIFFERENT.</p>
         <Link href="/track">TRACK ORDER</Link>
         <Link href="/admin">ADMIN</Link>
-        <a href="mailto:hello@38riches.com">CONTACT ↗</a>
+        <div className="site-footer__socials">
+          <a href="mailto:hello@38riches.com">CONTACT ↗</a>
+          <a href="https://www.tiktok.com/@38richies0?is_from_webapp=1&amp;sender_device=pc" target="_blank" rel="noreferrer">TIKTOK ↗</a>
+          <a href="https://www.instagram.com/38r_ichies/" target="_blank" rel="noreferrer">INSTAGRAM ↗</a>
+        </div>
       </footer>
     </main>
   );

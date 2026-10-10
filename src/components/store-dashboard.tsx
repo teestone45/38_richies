@@ -202,12 +202,12 @@ export default function StoreDashboard({ products }: { products: Product[] }) {
         <button className="store-dashboard__trigger" type="button" aria-expanded={isOpen} aria-controls="store-dashboard-panel" onClick={() => setIsOpen((open) => !open)}>
           <span className="store-dashboard__signal" aria-hidden="true" />
           <span>Store dashboard</span>
-          <span className="store-dashboard__trigger-count">{String(products.length).padStart(2, "0")} PIECES</span>
+          <span className="store-dashboard__trigger-count">{String(products.length).padStart(2, "0")} PRODUCTS</span>
           <span className="store-dashboard__chevron" aria-hidden="true">{isOpen ? "−" : "+"}</span>
         </button>
       </div>
       {isOpen && <div className="store-dashboard__panel" id="store-dashboard-panel">
-        <div className="store-dashboard__heading"><div><p className="eyebrow">38 RICHES / STORE DECK</p><h2>Move through the store.</h2></div><span>{products.length} LIVE PIECES</span></div>
+        <div className="store-dashboard__heading"><div><p className="eyebrow">38 RICHES / STORE DECK</p><h2>Move through the store.</h2></div><span>{products.length} LIVE PRODUCTS</span></div>
         <div className="store-dashboard__grid">
           {items.map((item, index) => {
             const content = <><span className="store-dashboard__item-index">{String(index + 1).padStart(2, "0")}</span><span className="store-dashboard__item-copy"><strong>{item.label}</strong><small>{item.detail}</small></span><span className="store-dashboard__item-arrow" aria-hidden="true">↗</span></>;

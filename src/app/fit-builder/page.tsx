@@ -6,13 +6,13 @@ import { getProducts } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "The 38 RICHES Fit Builder",
-  description: "Build a complete 38 RICHES outfit. Select an available top and bottom, choose a size for each, preview the combined price, and add both pieces to your bag together.",
+  title: "38 RICHES Fit Builder | Mix & Match Oversized Streetwear",
+  description: "Use the 38 RICHES Fit Builder to pair an available top and bottom, choose each size, preview the combined price, and add both pieces to your bag together.",
   alternates: { canonical: "/fit-builder" },
   openGraph: {
     type: "website",
-    title: "The 38 RICHES Fit Builder",
-    description: "Choose a top and bottom, select each size, see the combined price, and add the outfit to your bag in one move.",
+    title: "38 RICHES Fit Builder | Mix & Match Oversized Streetwear",
+    description: "Pair an available 38 RICHES top and bottom, select each size, preview the total, and add both pieces to your bag together.",
     url: "/fit-builder",
   },
 };
