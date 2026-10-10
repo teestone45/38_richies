@@ -48,9 +48,6 @@ export default async function Home() {
         </div>
       </section>
       <StoreDisclosure>
-      <StoreDashboard products={products} />
-      <FeaturedProductHero products={products} />
-
       <section className="shop-section page-shell" id="shop">
         <div className="section-heading">
           <div><p className="eyebrow">THE FIRST DROP / 001</p><h2>THE ROTATION</h2></div>
@@ -82,6 +79,8 @@ export default async function Home() {
           </div>
         </section>
       )}
+      <StoreDashboard products={products} />
+      <FeaturedProductHero products={products} />
       </StoreDisclosure>
 
       <StoreDisclosure title="About 38 RICHES & FAQs" description="Brand story, sizing, shipping, Fit Builder, and drop updates">
