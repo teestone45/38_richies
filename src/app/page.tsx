@@ -48,15 +48,8 @@ export default async function Home() {
         </div>
       </section>
       <StoreDisclosure>
-      <BrandFaq />
       <StoreDashboard products={products} />
       <FeaturedProductHero products={products} />
-
-      <section className="ticker" aria-label="Brand statement">
-        <div className="ticker__track">
-          <span>MORE THAN CLOTHES / IT&apos;S 38 RICHES</span><i>✳</i><span>MADE FOR THE ONES WHO MOVE DIFFERENT</span><i>✳</i><span>MORE THAN CLOTHES / IT&apos;S 38 RICHES</span><i>✳</i>
-        </div>
-      </section>
 
       <section className="shop-section page-shell" id="shop">
         <div className="section-heading">
@@ -89,6 +82,14 @@ export default async function Home() {
           </div>
         </section>
       )}
+      </StoreDisclosure>
+
+      <BrandFaq />
+      <section className="ticker" aria-label="Brand statement">
+        <div className="ticker__track">
+          <span>MORE THAN CLOTHES / IT&apos;S 38 RICHES</span><i>✳</i><span>MADE FOR THE ONES WHO MOVE DIFFERENT</span><i>✳</i><span>MORE THAN CLOTHES / IT&apos;S 38 RICHES</span><i>✳</i>
+        </div>
+      </section>
 
       <section className="fit-builder-promo page-shell" aria-labelledby="fit-builder-promo-title">
         <div>
@@ -185,7 +186,6 @@ export default async function Home() {
           <a href="https://www.instagram.com/38r_ichies/" target="_blank" rel="noreferrer">INSTAGRAM ↗</a>
         </div>
       </footer>
-      </StoreDisclosure>
     </main>
   );
 }

@@ -23,7 +23,7 @@ export default function StoreDisclosure({ children }: { children: ReactNode }) {
   return (
     <details className="store-disclosure" ref={detailsRef}>
       <summary className="store-disclosure__trigger page-shell">
-        <span><strong>Explore the store</strong><small>Shop the collection, upcoming drops, FAQs, and our story</small></span>
+        <span><strong>Explore the store</strong><small>Shop the collection and preview upcoming drops</small></span>
         <span className="store-disclosure__icon" aria-hidden="true">+</span>
       </summary>
       {children}
