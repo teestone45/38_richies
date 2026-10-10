@@ -53,6 +53,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <div className="announcement">Complimentary Ghana shipping on orders of GH₵100 or more</div>
+        <nav className="social-topbar" aria-label="Follow 38 RICHES on social media">
+          <span>FOLLOW 38 RICHES</span>
+          <a href="https://www.tiktok.com/@38richies0?is_from_webapp=1&amp;sender_device=pc" target="_blank" rel="noreferrer">TikTok <span aria-hidden="true">↗</span></a>
+          <a href="https://www.instagram.com/38r_ichies/" target="_blank" rel="noreferrer">Instagram <span aria-hidden="true">↗</span></a>
+        </nav>
         <SiteHeader />
         {children}
         <SupportChat />

@@ -29,6 +29,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 ::selection { color: var(--paper); background: var(--sea-deep); }
 
 .announcement { min-height: 28px; display: grid; place-items: center; padding: 5px 12px; background: var(--sea-deep); color: var(--paper); font-size: 9px; font-weight: 800; letter-spacing: .14em; text-align: center; text-transform: uppercase; }
+.social-topbar { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px 22px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.social-topbar > span { color: var(--muted); font-size: 8px; }
+.social-topbar a { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; color: var(--paper); }
+.social-topbar a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.social-topbar a:focus-visible { outline: 2px solid var(--paper); outline-offset: 4px; }
 .site-header { height: 66px; padding: 0 clamp(16px, 2.5vw, 34px); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: var(--ink); position: relative; z-index: 5; }
 .wordmark { width: 54px; height: 42px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .wordmark img { width: 100%; height: 100%; object-fit: contain; }
