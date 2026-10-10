@@ -260,6 +260,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .coming-soon-card > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
 .coming-soon-card__action { display: inline-block; margin-top: 14px; color: var(--lime); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .coming-soon-card__action:hover { color: var(--sea); }
+.coming-soon-card__action--preorder { width: 100%; min-height: 48px; margin-top: 18px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; background: var(--lime); color: var(--ink); font-size: 10px; font-weight: 900; letter-spacing: .12em; transition: transform .18s ease, background .18s ease; }
+.coming-soon-card__action--preorder:hover { transform: translateY(-2px); background: var(--sea); color: var(--paper); }
+.coming-soon-card__action--preorder:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
 .rotation-stock { margin: 0; color: var(--lime); font-size: 8px; font-weight: 800; letter-spacing: .12em; text-align: right; }
 .fit-builder-promo { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-block: 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .fit-builder-promo h2 { margin: 0; font-family: var(--font-display); font-size: clamp(38px, 6vw, 64px); font-weight: 400; line-height: .92; }

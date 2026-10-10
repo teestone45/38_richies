@@ -74,7 +74,7 @@ export default async function Home() {
                 </Link>
                 <h3>{product.title}</h3>
                 <p>{formatCurrency(product.priceCents / 100)} · {isPreOrderAvailable(product) ? "Pay in full now; shipping date to be announced." : "Release details will be announced here."}</p>
-                <Link className="coming-soon-card__action" href={`/product/${product.slug}`}>{isPreOrderAvailable(product) ? "Choose size & pre-order ↗" : "View release details ↗"}</Link>
+                <Link className={isPreOrderAvailable(product) ? "button coming-soon-card__action coming-soon-card__action--preorder" : "coming-soon-card__action"} href={`/product/${product.slug}`}>{isPreOrderAvailable(product) ? "Choose size & pre-order ↗" : "View release details ↗"}</Link>
               </article>
             ))}
           </div>
