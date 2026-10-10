@@ -253,11 +253,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .store-disclosure__trigger:focus-visible { outline: 2px solid var(--paper); outline-offset: 4px; }
 .coming-soon-section { padding-block: 24px 64px; }
 .coming-soon-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-.coming-soon-card__image { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface); }
+.coming-soon-card__image { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface); }
 .coming-soon-card__image img { object-fit: cover; }
 .coming-soon-card__image > span { position: absolute; bottom: 18px; left: 18px; padding: 10px 14px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: 800; letter-spacing: .14em; }
 .coming-soon-card h3 { margin: 18px 0 8px; font-family: var(--font-display); font-size: 28px; font-weight: 400; }
 .coming-soon-card > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.coming-soon-card__action { display: inline-block; margin-top: 14px; color: var(--lime); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.coming-soon-card__action:hover { color: var(--sea); }
 .rotation-stock { margin: 0; color: var(--lime); font-size: 8px; font-weight: 800; letter-spacing: .12em; text-align: right; }
 .fit-builder-promo { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-block: 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .fit-builder-promo h2 { margin: 0; font-family: var(--font-display); font-size: clamp(38px, 6vw, 64px); font-weight: 400; line-height: .92; }

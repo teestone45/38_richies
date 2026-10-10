@@ -6,8 +6,9 @@ import ProductCollection from "@/components/product-collection";
 import StoreDashboard from "@/components/store-dashboard";
 import BrandFaq from "@/components/brand-faq";
 import StoreDisclosure from "@/components/store-disclosure";
+import { formatCurrency } from "@/lib/currency";
 import { getProducts } from "@/lib/products";
-import { isComingSoon } from "@/lib/product-availability";
+import { isComingSoon, isPreOrderAvailable } from "@/lib/product-availability";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -62,17 +63,18 @@ export default async function Home() {
         <section className="coming-soon-section page-shell" id="coming-soon" aria-labelledby="coming-soon-title">
           <div className="section-heading">
             <div><p className="eyebrow">THE NEXT DROP</p><h2 id="coming-soon-title">COMING SOON</h2></div>
-            <p className="section-heading__note">A preview of what&apos;s next.<br />Not available to buy yet.</p>
+            <p className="section-heading__note">Preview what&apos;s next.<br />Choose an open pre-order.</p>
           </div>
           <div className="coming-soon-grid">
             {upcomingProducts.map((product) => (
               <article className="coming-soon-card" key={product.slug}>
-                <div className="coming-soon-card__image">
+                <Link className="coming-soon-card__image" href={`/product/${product.slug}`} aria-label={`${isPreOrderAvailable(product) ? "Pre-order" : "View"} ${product.title}`}>
                   <Image src={product.image} alt={`${product.title} clothing preview`} fill unoptimized sizes="(max-width: 640px) 89vw, 44vw" />
-                  <span>COMING SOON</span>
-                </div>
+                  <span>{isPreOrderAvailable(product) ? "PRE-ORDER OPEN" : "COMING SOON"}</span>
+                </Link>
                 <h3>{product.title}</h3>
-                <p>Release details will be announced here. Follow 38 RICHES for updates.</p>
+                <p>{formatCurrency(product.priceCents / 100)} · {isPreOrderAvailable(product) ? "Pay in full now; shipping date to be announced." : "Release details will be announced here."}</p>
+                <Link className="coming-soon-card__action" href={`/product/${product.slug}`}>{isPreOrderAvailable(product) ? "Choose size & pre-order ↗" : "View release details ↗"}</Link>
               </article>
             ))}
           </div>
