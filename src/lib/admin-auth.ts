@@ -14,18 +14,34 @@ function getSessionSecret() {
 }
 
 export function isAdminConfigured() {
-  return Boolean((process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL) && process.env.ADMIN_PASSWORD && getSessionSecret());
+  return Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && getSessionSecret());
 }
 
 export function credentialsMatch(identifier: string, password: string) {
-  const expectedUsername = process.env.ADMIN_USERNAME?.trim().toUpperCase();
   const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const expectedPassword = process.env.ADMIN_PASSWORD;
-  const normalizedIdentifier = identifier.trim();
-  const usernameMatches = Boolean(expectedUsername && constantTimeEqual(normalizedIdentifier.toUpperCase(), expectedUsername));
-  const emailMatches = Boolean(expectedEmail && constantTimeEqual(normalizedIdentifier.toLowerCase(), expectedEmail));
+  const emailMatches = Boolean(expectedEmail && constantTimeEqual(identifier.trim().toLowerCase(), expectedEmail));
   const passwordMatches = Boolean(expectedPassword && constantTimeEqual(password, expectedPassword));
-  return (usernameMatches || emailMatches) && passwordMatches;
+  return emailMatches && passwordMatches;
+}
+
+export function adminEmailMatches(email: string) {
+  const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  return Boolean(expectedEmail && constantTimeEqual(email.trim().toLowerCase(), expectedEmail));
+}
+
+export function isAdminEmailCodeEnabled() {
+  return process.env.ADMIN_REQUIRE_EMAIL_CODE === "true";
+}
+
+export function isAdminEmailCodeConfigured() {
+  return Boolean(
+    process.env.RESEND_API_KEY &&
+    process.env.ADMIN_EMAIL_FROM &&
+    process.env.NEXT_PUBLIC_SANITY_PROJECT_ID &&
+    process.env.NEXT_PUBLIC_SANITY_DATASET &&
+    process.env.SANITY_API_WRITE_TOKEN,
+  );
 }
 
 export function createAdminSession() {

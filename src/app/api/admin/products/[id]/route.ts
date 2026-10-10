@@ -107,6 +107,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!(featuredValue === false || featuredValue === true || featuredValue === "true" || featuredValue === "false")) return Response.json({ error: "Featured must be true or false." }, { status: 400 });
     update.featured = featuredValue === true || featuredValue === "true";
   }
+  if (has("comingSoon")) {
+    const comingSoonValue = raw("comingSoon");
+    if (!(comingSoonValue === false || comingSoonValue === true || comingSoonValue === "true" || comingSoonValue === "false")) return Response.json({ error: "Coming Soon must be true or false." }, { status: 400 });
+    update.comingSoon = comingSoonValue === true || comingSoonValue === "true";
+  }
 
   const imageFiles = form ? [...form.getAll("images"), ...form.getAll("image")].filter((file): file is File => file instanceof File && file.size > 0) : [];
   if (imageFiles.length > 8 || imageFiles.some((image) => image.size > 8 * 1024 * 1024)) return Response.json({ error: "Upload up to 8 product photos, each 8 MB or smaller." }, { status: 413 });

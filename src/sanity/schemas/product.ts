@@ -27,6 +27,7 @@ const productSchema = {
       }],
     },
     { name: "featured", title: "Feature on storefront", type: "boolean", initialValue: false },
+    { name: "comingSoon", title: "Coming soon", type: "boolean", initialValue: false },
     { name: "active", title: "Store status", type: "boolean", initialValue: true },
     { name: "dtfPlacement", title: "Print / decoration placement", type: "string" },
     { name: "fabric", title: "Fabric / weight", type: "string" },

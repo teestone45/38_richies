@@ -41,6 +41,7 @@ export type Product = {
   artwork?: ProductArtwork;
   inventory?: Record<string, number>;
   featured?: boolean;
+  comingSoon?: boolean;
   createdAt?: string;
   reviews?: ProductReview[];
 };
@@ -121,6 +122,7 @@ type SanityProduct = Partial<Product> & {
   images?: string[];
   inventory?: { size: string; quantity: number }[];
   featured?: boolean;
+  comingSoon?: boolean;
 };
 
 export function getStarterProducts() {
@@ -158,6 +160,7 @@ const productProjection = `{
   sizes,
   inventory,
   featured,
+  comingSoon,
   dtfPlacement,
   fabric,
   dropName,
@@ -196,6 +199,7 @@ function normalizeProduct(product: SanityProduct): Product {
     artwork: product.artwork,
     inventory: product.inventory?.length ? product.inventory.reduce((stock, variant) => ({ ...stock, [variant.size]: variant.quantity }), {}) : undefined,
     featured: product.featured ?? false,
+    comingSoon: product.comingSoon,
     createdAt: product._createdAt,
     reviews: product.reviews ?? [],
   };

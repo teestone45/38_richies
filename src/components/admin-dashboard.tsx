@@ -28,6 +28,7 @@ type AdminProduct = {
   printMethod: "DTF" | "DTG" | "Embroidered";
   inventory?: Record<string, number>;
   featured: boolean;
+  comingSoon: boolean;
 };
 
 type AdminOrder = {
@@ -52,6 +53,7 @@ type AdminOrder = {
 type ApiResponse = {
   error?: string;
   authenticated?: boolean;
+  codeRequired?: boolean;
   draft?: {
     title: string;
     slug: string;
@@ -99,6 +101,7 @@ function toEditorProducts(products: ApiResponse["products"] = []): AdminProduct[
       images: product.images?.length ? product.images : [product.image],
       inventory,
       featured: product.featured ?? false,
+      comingSoon: product.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${product.title} ${product.slug} ${product.badge}`),
       priceValue: Number(product.price).toFixed(2),
     };
   });
@@ -113,9 +116,12 @@ export default function AdminDashboard() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [awaitingEmailCode, setAwaitingEmailCode] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [isResendingEmailCode, setIsResendingEmailCode] = useState(false);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [activeAdminView, setActiveAdminView] = useState<"catalog" | "orders">("catalog");
+  const [activeAdminView, setActiveAdminView] = useState<"catalog" | "coming-soon" | "orders">("catalog");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -217,20 +223,52 @@ export default function AdminDashboard() {
     const response = await fetch("/api/admin/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password }),
+      body: JSON.stringify(awaitingEmailCode
+        ? { phase: "verify", email: identifier, code: emailCode }
+        : { phase: "password", email: identifier, password }),
     });
     const result = await readResponse(response);
     if (!response.ok) {
       setError(result.error ?? "Could not sign in.");
       return;
     }
+    if (result.codeRequired) {
+      setAwaitingEmailCode(true);
+      setPassword("");
+      setEmailCode("");
+      setNotice(`A six-digit sign-in code was sent to ${identifier}.`);
+      return;
+    }
     setIdentifier("");
     setPassword("");
+    setEmailCode("");
+    setAwaitingEmailCode(false);
+    setNotice("");
     setIsSignedIn(true);
     try {
       await refreshProducts();
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load products.");
+    }
+  }
+
+  async function resendSignInCode() {
+    setError("");
+    setNotice("");
+    setIsResendingEmailCode(true);
+    try {
+      const response = await fetch("/api/admin/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phase: "resend", email: identifier }),
+      });
+      const result = await readResponse(response);
+      if (!response.ok) throw new Error(result.error ?? "Could not resend the sign-in code.");
+      setNotice(`A new sign-in code was sent to ${identifier}.`);
+    } catch (resendError) {
+      setError(resendError instanceof Error ? resendError.message : "Could not resend the sign-in code.");
+    } finally {
+      setIsResendingEmailCode(false);
     }
   }
 
@@ -242,6 +280,9 @@ export default function AdminDashboard() {
     setCanManageProducts(false);
     setStorageMessage("");
     setIsSignedIn(false);
+    setAwaitingEmailCode(false);
+    setEmailCode("");
+    setPassword("");
     setNotice("");
     setError("");
   }
@@ -258,7 +299,7 @@ export default function AdminDashboard() {
       const response = await fetch(`/api/admin/products/${encodeURIComponent(product._id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price: Number(product.priceValue), active: product.active, featured: product.featured, colors: product.colors ?? [], stock: product.inventory ? Object.entries(product.inventory).map(([size, quantity]) => ({ size, quantity })) : [] }),
+        body: JSON.stringify({ price: Number(product.priceValue), active: product.active, featured: product.featured, comingSoon: product.comingSoon, colors: product.colors ?? [], stock: product.inventory ? Object.entries(product.inventory).map(([size, quantity]) => ({ size, quantity })) : [] }),
       });
       const result = await readResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Could not save product changes.");
@@ -405,7 +446,7 @@ export default function AdminDashboard() {
       productForm.set("slug", productDetails.slug || "38-riches-piece");
       productForm.set("price", productDetails.price.toFixed(2));
       productForm.set("category", productDetails.category);
-      productForm.set("badge", "NEW DROP");
+      productForm.set("badge", activeAdminView === "coming-soon" ? "COMING SOON" : "NEW DROP");
       productForm.set("colors", productDetails.colors.join(", ") || "Black");
       productForm.set("sizes", "XL, 2XL");
       productForm.set("stock", "");
@@ -415,6 +456,7 @@ export default function AdminDashboard() {
       productForm.set("printMethod", "DTF");
       productForm.set("active", "true");
       productForm.set("featured", "false");
+      productForm.set("comingSoon", String(activeAdminView === "coming-soon"));
       const generatedResponse = await fetch(imageDataUrl);
       const generatedBlob = await generatedResponse.blob();
       productForm.append("images", new File([generatedBlob], "venice-generated-product.webp", { type: "image/webp" }));
@@ -428,7 +470,7 @@ export default function AdminDashboard() {
       setGeneratedProductDetails(undefined);
       setImageAnalysisMessage("");
       await refreshProducts();
-      setNotice(`${productDetails.title} published to your storefront.`);
+      setNotice(activeAdminView === "coming-soon" ? `${productDetails.title} added to Coming Soon.` : `${productDetails.title} published to your storefront.`);
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Could not generate and publish the product.");
     } finally {
@@ -462,7 +504,7 @@ export default function AdminDashboard() {
       productForm.set("slug", slug);
       productForm.set("price", price.toFixed(2));
       productForm.set("category", manualUploadCategory.trim() || "Graphic tee");
-      productForm.set("badge", "NEW DROP");
+      productForm.set("badge", activeAdminView === "coming-soon" ? "COMING SOON" : "NEW DROP");
       productForm.set("colors", "Black");
       productForm.set("sizes", "XL, 2XL");
       productForm.set("stock", "");
@@ -472,6 +514,7 @@ export default function AdminDashboard() {
       productForm.set("printMethod", "DTF");
       productForm.set("active", "true");
       productForm.set("featured", "false");
+      productForm.set("comingSoon", String(activeAdminView === "coming-soon"));
       manualUploadFiles.forEach((file) => productForm.append("images", file));
 
       const response = await fetch("/api/admin/products", { method: "POST", body: productForm });
@@ -484,7 +527,7 @@ export default function AdminDashboard() {
       setManualUploadFiles([]);
       if (event.currentTarget) event.currentTarget.reset();
       await refreshProducts();
-      setNotice(`${title} published to your storefront.`);
+      setNotice(activeAdminView === "coming-soon" ? `${title} added to Coming Soon.` : `${title} published to your storefront.`);
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Could not upload the product.");
     } finally {
@@ -563,6 +606,7 @@ export default function AdminDashboard() {
     );
   }
 
+  const comingSoonProducts = products.filter((product) => product.comingSoon);
   const visibleProducts = products.filter((product) => `${product.title} ${product.slug} ${product.category}`.toLowerCase().includes(catalogQuery.trim().toLowerCase()));
 
   function toggleProductSelection(id: string) {
@@ -577,14 +621,22 @@ export default function AdminDashboard() {
         <div className="admin-login">
           <p className="eyebrow">38 RICHES / PRIVATE ACCESS</p>
           <h1>CONTROL<br />THE DROP.</h1>
-          <p className="admin-intro">Sign in to create, edit, hide, or remove products from your storefront.</p>
+          <p className="admin-intro">{awaitingEmailCode ? `Enter the six-digit code sent to ${identifier}.` : "Sign in to create, edit, hide, or remove products from your storefront."}</p>
           {error && <p className="admin-alert" role="alert">{error}</p>}
+          {notice && <p className="admin-notice" role="status">{notice}</p>}
           <form className="admin-login__form" onSubmit={signIn}>
-            <label htmlFor="admin-identifier">Email or username</label>
-            <input id="admin-identifier" type="text" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />
-            <label htmlFor="admin-password">Admin password</label>
-            <input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-            <button className="button button--lime" type="submit">Sign in <span aria-hidden="true">↗</span></button>
+            <label htmlFor="admin-email">Admin email</label>
+            <input id="admin-email" type="email" autoComplete="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} readOnly={awaitingEmailCode} required />
+            {!awaitingEmailCode && <>
+              <label htmlFor="admin-password">Admin password</label>
+              <input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+            </>}
+            {awaitingEmailCode && <>
+              <label htmlFor="admin-email-code">Six-digit email code</label>
+              <input id="admin-email-code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required />
+              <button className="admin-login__resend" type="button" onClick={resendSignInCode} disabled={isResendingEmailCode}>{isResendingEmailCode ? "Sending code..." : "Resend code"}</button>
+            </>}
+            <button className="button button--lime" type="submit">{awaitingEmailCode ? "Verify code" : "Continue"} <span aria-hidden="true">↗</span></button>
           </form>
           <Link className="admin-back" href="/">← Back to storefront</Link>
         </div>
@@ -611,6 +663,7 @@ export default function AdminDashboard() {
 
       <nav className="admin-tabs" aria-label="Admin sections">
         <button type="button" aria-pressed={activeAdminView === "catalog"} onClick={() => setActiveAdminView("catalog")}>Catalog <span>{products.length}</span></button>
+        <button type="button" aria-pressed={activeAdminView === "coming-soon"} onClick={() => setActiveAdminView("coming-soon")}>Coming Soon <span>{comingSoonProducts.length}</span></button>
         <button type="button" aria-pressed={activeAdminView === "orders"} onClick={() => setActiveAdminView("orders")}>Orders <span>{orders.length}</span></button>
       </nav>
 
@@ -718,6 +771,59 @@ export default function AdminDashboard() {
           </div>
         )}
       </section>
+      </>}
+
+      {activeAdminView === "coming-soon" && <>
+        <section className="admin-section" aria-labelledby="coming-soon-create-title">
+          <div className="admin-section__heading"><div><p className="eyebrow">UPCOMING DROP</p><h2 id="coming-soon-create-title">ADD COMING SOON PIECE</h2></div><span>NOT FOR SALE</span></div>
+          <p className="admin-ai-note">Products added here appear in the storefront&apos;s Coming Soon section and cannot be purchased until you make them available.</p>
+          <form className="admin-product-form admin-product-form--studio" onSubmit={publishManualUpload}>
+            <div className="admin-image-generator">
+              <label htmlFor="coming-soon-title">Product name<input id="coming-soon-title" type="text" value={manualUploadTitle} onChange={(event) => setManualUploadTitle(event.target.value)} placeholder="Next drop hoodie" required /></label>
+              <label htmlFor="coming-soon-price">Price (GHS)<input id="coming-soon-price" type="number" min="0.01" step="0.01" value={manualUploadPrice} onChange={(event) => setManualUploadPrice(event.target.value)} required /></label>
+              <label htmlFor="coming-soon-category">Category<input id="coming-soon-category" type="text" value={manualUploadCategory} onChange={(event) => setManualUploadCategory(event.target.value)} placeholder="Hoodie" /></label>
+              <label htmlFor="coming-soon-description">Description<textarea id="coming-soon-description" rows={3} value={manualUploadDescription} onChange={(event) => setManualUploadDescription(event.target.value)} placeholder="Details about this upcoming piece." /></label>
+              <label className="admin-artwork-upload" htmlFor="coming-soon-images">Product photos<input id="coming-soon-images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => setManualUploadFiles(Array.from(event.currentTarget.files ?? []))} required /><small>{manualUploadFiles.length ? `${manualUploadFiles.length} image(s) selected` : "JPG, PNG, or WebP."}</small></label>
+            </div>
+            <div className="admin-product-form__submit"><button className="button button--lime" type="submit" disabled={isQuickUploading || !canManageProducts || !manualUploadTitle.trim() || !manualUploadFiles.length}>{isQuickUploading ? "Adding..." : "Add to Coming Soon"}<span aria-hidden="true">↗</span></button></div>
+          </form>
+        </section>
+        <section className="admin-section" aria-labelledby="coming-soon-products-title">
+          <div className="admin-section__heading"><div><p className="eyebrow">EDIT / PUBLISH</p><h2 id="coming-soon-products-title">UPCOMING PRODUCTS</h2></div><span>{comingSoonProducts.length} PRODUCTS</span></div>
+          {comingSoonProducts.length === 0 ? <p className="admin-empty">No upcoming products yet. Add one above.</p> : <div className="admin-product-list">
+            {comingSoonProducts.map((product) => <article className="admin-product-row" key={product._id}>
+              <div className="admin-product-row__image" style={{ backgroundImage: product.image ? `url("${product.image}")` : undefined }} role="img" aria-label={`${product.title} photo`} />
+              <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.category}</p></div>
+              <label className="admin-product-row__price">PRICE (GHS)<input aria-label={`Price in GHS for ${product.title}`} type="number" min="0.01" max="10000" step="0.01" value={product.priceValue} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { priceValue: event.target.value })} /></label>
+              <div className="admin-product-row__commands">
+                <button className="admin-save" type="button" onClick={() => saveProduct(product)} disabled={!canManageProducts || savingId === product._id}>{savingId === product._id ? "Saving..." : "Save"}</button>
+                <button className="admin-edit" type="button" aria-expanded={editingId === product._id} onClick={() => setEditingId(editingId === product._id ? "" : product._id)}>{editingId === product._id ? "Close" : "Edit details"}</button>
+                <button className="admin-edit" type="button" onClick={() => { updateProduct(product._id, { comingSoon: false }); void saveProduct({ ...product, comingSoon: false }); }} disabled={!canManageProducts || savingId === product._id}>Make available</button>
+              </div>
+              {editingId === product._id && <form className="admin-edit-form" key={`${product._id}-coming-edit`} onSubmit={(event) => saveProductDetails(event, product)}>
+                <label>Product name<input name="title" required maxLength={120} defaultValue={product.title} /></label>
+                <label>URL slug<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" defaultValue={product.slug} /></label>
+                <label>Category<input name="category" required maxLength={80} defaultValue={product.category} /></label>
+                <label>Drop label<input name="badge" maxLength={32} defaultValue={product.badge} /></label>
+                <label className="admin-product-form__wide">Description<textarea name="description" rows={3} maxLength={2000} defaultValue={product.description} /></label>
+                <label>Available colors<input name="colors" defaultValue={product.colors?.join(", ") ?? ""} placeholder="Black, Cream" /></label>
+                <label>Available sizes<input name="sizes" required defaultValue={product.sizes.join(", ")} /></label>
+                <label>Stock by size<input name="stock" defaultValue={Object.entries(product.inventory ?? {}).map(([size, quantity]) => `${size}:${quantity}`).join(", ")} placeholder="XL:4, 2XL:2" /><small>Blank means untracked stock.</small></label>
+                <label>Coming Soon<select name="comingSoon" defaultValue="true"><option value="true">Yes — upcoming</option><option value="false">No — available</option></select></label>
+                <label>Print method<select name="printMethod" defaultValue={product.printMethod}><option>DTF</option><option>DTG</option><option>Embroidered</option></select></label>
+                <label>Feature product<select name="featured" defaultValue={product.featured ? "true" : "false"}><option value="false">Standard</option><option value="true">Featured</option></select></label>
+                <label>Print placement<input name="dtfPlacement" maxLength={160} defaultValue={product.dtfPlacement} /></label>
+                <label>Fabric / weight<input name="fabric" maxLength={100} defaultValue={product.fabric} /></label>
+                <label>Drop / collection<input name="dropName" maxLength={80} defaultValue={product.dropName ?? ""} placeholder="Drop 001 / 2026" /></label>
+                <label>Story headline<input name="storyTitle" maxLength={100} defaultValue={product.storyTitle ?? ""} placeholder="The idea behind the piece" /></label>
+                <label className="admin-product-form__wide">Behind the piece<textarea name="story" rows={4} maxLength={1600} defaultValue={product.story ?? ""} placeholder="Share the inspiration, print details, or point of view behind this piece." /></label>
+                <label className="admin-product-form__wide">Styling notes<textarea name="stylingNotes" rows={2} maxLength={500} defaultValue={product.stylingNotes ?? ""} placeholder="How to wear or pair this piece." /></label>
+                <label className="admin-upload">Replace / add gallery images<input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple /><small>Optional · Up to 8 JPG, PNG or WebP · 8 MB each</small></label>
+                <div className="admin-edit-form__commands"><button className="button button--lime" type="submit" disabled={!canManageProducts || savingId === product._id}>{savingId === product._id ? "Saving..." : "Save product details"}</button></div>
+              </form>}
+            </article>)}
+          </div>}
+        </section>
       </>}
 
       {activeAdminView === "orders" && <section className="admin-section" aria-labelledby="orders-title">

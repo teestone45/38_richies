@@ -17,6 +17,7 @@ const adminProductsQuery = `*[_type == "product"] | order(_createdAt desc) {
   sizes,
   inventory,
   featured,
+  comingSoon,
   dtfPlacement,
   fabric,
   dropName,
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
         _id: `local-${product.slug}`,
         price: product.priceCents / 100,
         active: true,
+        comingSoon: product.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${product.title} ${product.slug} ${product.badge}`),
       })),
       canManageProducts: false,
       storageMessage: "Showing the starter catalog. Connect Sanity to save product edits, uploads, or deletions.",
@@ -66,11 +68,15 @@ export async function GET(request: Request) {
         _id: `local-${starter.slug}`,
         price: starter.priceCents / 100,
         active: true,
+        comingSoon: starter.comingSoon ?? /\bcoming[\s-]+(?:soon|up)\b/i.test(`${starter.title} ${starter.slug} ${starter.badge}`),
       });
     }
 
     for (const product of storedProducts) {
-      if (!starterSlugs.has(product.slug) && !product.removed) products.push(product);
+      if (!starterSlugs.has(product.slug) && !product.removed) products.push({
+        ...product,
+        comingSoon: typeof product.comingSoon === "boolean" ? product.comingSoon : /\bcoming[\s-]+(?:soon|up)\b/i.test(`${String(product.title ?? "")} ${product.slug} ${String(product.badge ?? "")}`),
+      });
     }
 
     return Response.json({ products, canManageProducts: true }, { headers: { "Cache-Control": "no-store" } });
@@ -110,6 +116,7 @@ export async function POST(request: Request) {
   const printMethod = textField(form, "printMethod") || "DTF";
   const active = form.get("active") === "true";
   const featured = form.get("featured") === "true";
+  const comingSoon = form.get("comingSoon") === "true";
   const images = [...form.getAll("images"), ...form.getAll("image")].filter((file): file is File => file instanceof File && file.size > 0);
 
   if (!title || title.length > 120 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !Number.isFinite(price) || price <= 0 || price > 10000 || Number(price.toFixed(2)) !== price || !category || sizes.length === 0 || sizes.length > 12 || colors.length > 12 || !["DTF", "DTG", "Embroidered"].includes(printMethod)) {
@@ -146,6 +153,7 @@ export async function POST(request: Request) {
       fabric,
       printMethod,
       featured,
+      comingSoon,
       active,
     });
     revalidatePath("/");
