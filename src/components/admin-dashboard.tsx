@@ -779,7 +779,7 @@ export default function AdminDashboard() {
 
       {activeAdminView === "coming-soon" && <>
         <section className="admin-section" aria-labelledby="coming-soon-create-title">
-          <div className="admin-section__heading"><div><p className="eyebrow">UPCOMING DROP</p><h2 id="coming-soon-create-title">ADD COMING SOON PIECE</h2></div><span>NOT FOR SALE</span></div>
+          <div className="admin-section__heading"><div><p className="eyebrow">UPCOMING DROP</p><h2 id="coming-soon-create-title">ADD COMING SOON PIECE</h2></div><span>PRE-ORDER CONTROL</span></div>
           <p className="admin-ai-note">Enable pre-orders per product below. Customers pay the full price now; shipping dates will be announced later.</p>
           <form className="admin-product-form admin-product-form--studio" onSubmit={publishManualUpload}>
             <div className="admin-image-generator">
@@ -800,6 +800,7 @@ export default function AdminDashboard() {
               <div className="admin-product-row__image" style={{ backgroundImage: product.image ? `url("${product.image}")` : undefined }} role="img" aria-label={`${product.title} photo`} />
               <div className="admin-product-row__identity"><h3>{product.title}</h3><p>/{product.slug} · {product.category} · {product.preOrderEnabled ? "PRE-ORDER OPEN" : "PRE-ORDER CLOSED"}</p></div>
               <label className="admin-product-row__price">PRICE (GHS)<input aria-label={`Price in GHS for ${product.title}`} type="number" min="0.01" max="10000" step="0.01" value={product.priceValue} disabled={!canManageProducts} onChange={(event) => updateProduct(product._id, { priceValue: event.target.value })} /></label>
+              <label className="admin-product-row__status">PRE-ORDER<select aria-label={`Pre-orders for ${product.title}`} value={product.preOrderEnabled ? "true" : "false"} disabled={!canManageProducts || savingId === product._id} onChange={(event) => { void saveProduct({ ...product, preOrderEnabled: event.target.value === "true" }); }}><option value="false">Closed</option><option value="true">Open — charge full price</option></select></label>
               <div className="admin-product-row__commands">
                 <button className="admin-save" type="button" onClick={() => saveProduct(product)} disabled={!canManageProducts || savingId === product._id}>{savingId === product._id ? "Saving..." : "Save"}</button>
                 <button className="admin-edit" type="button" aria-expanded={editingId === product._id} onClick={() => setEditingId(editingId === product._id ? "" : product._id)}>{editingId === product._id ? "Close" : "Edit details"}</button>
