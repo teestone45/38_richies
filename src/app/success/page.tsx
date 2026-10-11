@@ -1,7 +1,13 @@
 import Stripe from "stripe";
+import type { Metadata } from "next";
 import CheckoutSuccess from "@/components/checkout-success";
 import { recordPaystackOrder, verifyPaystackTransaction } from "@/lib/paystack";
 import { getSanityAdminClient } from "@/lib/sanity-admin";
+
+export const metadata: Metadata = {
+  title: "Checkout confirmation",
+  robots: { index: false, follow: false },
+};
 
 type Passport = {
   orderNumber: string;

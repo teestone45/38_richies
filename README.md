@@ -50,6 +50,8 @@ Checkout calculates prices on the server in GHS pesewas, collects customer email
 
 The callback URL is `<your-site-origin>/success`. Configure `NEXT_PUBLIC_SITE_URL` to your production origin so Paystack returns customers to the correct site. The Orders tab appears in `/admin` after a verified payment and lets you mark orders paid, packing, shipped, or cancelled and save tracking numbers. Existing Stripe orders remain visible, but new checkout uses Paystack.
 
+After a verified payment, `/success` shows the customer a thank-you message, their order/tracking code, a prefilled tracking link, and a Continue shopping button. Customers use the code with their checkout email to track delivery. Unconfirmed payments retain the bag and show a Return to your bag action instead of a thank-you message.
+
 Keep using Paystack test keys until a full test checkout, callback, webhook, order record, and inventory update have been confirmed. Then switch Vercel to the live key and configure the production webhook URL in your Paystack live dashboard.
 
 ## Security
