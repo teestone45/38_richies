@@ -68,7 +68,7 @@ Order confirmations and shipped notifications are sent only when `RESEND_API_KEY
 
 ## Google Ads tag
 
-The root layout loads the Google tag for `AW-18507081661` on all pages using `next/script` with `afterInteractive`. After deployment, use Google Ads' Test Installation to confirm the tag. This configures the Google Ads destination; a GA4 destination must be linked in Google or configured separately to enable Analytics reporting.
+The root layout loads one Google tag on all pages using `next/script` with `afterInteractive`. The existing initialization configures both Google Ads `AW-18507081661` and GA4 `G-MTSJWE7Y7`, without another script loader. After deployment, use Google Ads' Test Installation and GA4 Realtime or DebugView to verify collection. GA4 reports are not yet connected to the Admin dashboard.
 
 Purchase conversions are enabled on `/success` with destination `AW-18507081661/03tJCICkopkdEL3P7vhE`, configured by `GOOGLE_ADS_PURCHASE_SEND_TO` in `src/lib/google-ads.ts`.
 
