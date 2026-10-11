@@ -14,6 +14,8 @@ const { outputText } = ts.transpileModule(source, {
 const componentModule = { exports: {} };
 const componentRequire = (name) => {
   if (name === "next/link") return { default: ({ children, ...props }) => React.createElement("a", props, children) };
+  if (name === "next/script") return { default: ({ children, ...props }) => React.createElement("script", props, children) };
+  if (name === "@/lib/google-ads") return require("../src/lib/google-ads.ts");
   if (name === "@/lib/cart-store") return { useCartStore: (selector) => selector({ clearCart() {} }) };
   return require(name);
 };
@@ -60,4 +62,25 @@ test("pre-order thank-you messages preserve the full-payment and shipping-date n
   }));
   assert.match(html, /Pre-order items are paid in full; their shipping date will be announced later/);
   assert.match(html, /PRE-ORDER \/ SHIPPING DATE TO BE ANNOUNCED/);
+});
+
+test("missing conversion label never renders a purchase script even for a confirmed payment", () => {
+  const html = renderToStaticMarkup(React.createElement(CheckoutSuccess, {
+    verified: true,
+    paymentProvider: "Paystack",
+    orderReference: "RCH-261011-ABCD",
+    purchase: { value: 87, currency: "GHS", transactionId: "payment-123" },
+  }));
+  assert.doesNotMatch(html, /<script|google-ads-purchase/);
+});
+
+test("unverified payments ignore purchase data", () => {
+  const html = renderToStaticMarkup(React.createElement(CheckoutSuccess, {
+    verified: false,
+    paymentProvider: "Paystack",
+    orderReference: "",
+    purchase: { value: -1, currency: "", transactionId: "" },
+  }));
+  assert.match(html, /UNCONFIRMED/);
+  assert.doesNotMatch(html, /<script|google-ads-purchase/);
 });

@@ -1,20 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useEffect } from "react";
 import { useCartStore } from "@/lib/cart-store";
+import { buildGoogleAdsPurchaseScript, type GoogleAdsPurchase } from "@/lib/google-ads";
 
 type Passport = { orderNumber: string; createdAt: string; items: { title: string; size: string; color?: string; quantity: number; dropName?: string; preOrder?: boolean }[] };
 
-export default function CheckoutSuccess({ verified, paymentProvider, orderReference, passport }: { verified: boolean; paymentProvider: "Paystack" | "Stripe"; orderReference: string; passport?: Passport }) {
+export default function CheckoutSuccess({ verified, paymentProvider, orderReference, passport, purchase }: { verified: boolean; paymentProvider: "Paystack" | "Stripe"; orderReference: string; passport?: Passport; purchase?: GoogleAdsPurchase }) {
   const clearCart = useCartStore((state) => state.clearCart);
+  const purchaseScript = verified && purchase ? buildGoogleAdsPurchaseScript(purchase) : null;
 
   useEffect(() => {
     if (verified) clearCart();
   }, [clearCart, verified]);
 
+  useEffect(() => {
+    if (verified && purchase && !purchaseScript) {
+      console.warn("Google Ads Purchase tracking is disabled: replace YOUR_LABEL_HERE with the real conversion label.");
+    }
+  }, [verified, purchase, purchaseScript]);
+
   return (
     <main className="message-page">
+      {purchaseScript && purchase && <Script id={`google-ads-purchase-${encodeURIComponent(purchase.transactionId)}`} strategy="afterInteractive">{purchaseScript}</Script>}
       <p className="eyebrow">{verified ? "PAYMENT CONFIRMED / 38 RICHES" : "CHECKOUT / 38 RICHES"}</p>
       <h1>{verified ? <>THANK YOU<br />FOR YOUR ORDER.</> : <>PAYMENT<br />UNCONFIRMED.</>}</h1>
       <p>{verified
