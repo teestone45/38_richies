@@ -1,4 +1,4 @@
-export const GOOGLE_ADS_PURCHASE_SEND_TO = "AW-18507081661/YOUR_LABEL_HERE";
+export const GOOGLE_ADS_PURCHASE_SEND_TO = "AW-18507081661/03tJCICkopkdEL3P7vhE";
 
 export type GoogleAdsPurchase = {
   value: number;

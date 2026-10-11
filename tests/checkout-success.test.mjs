@@ -64,12 +64,25 @@ test("pre-order thank-you messages preserve the full-payment and shipping-date n
   assert.match(html, /PRE-ORDER \/ SHIPPING DATE TO BE ANNOUNCED/);
 });
 
-test("missing conversion label never renders a purchase script even for a confirmed payment", () => {
+test("confirmed paid orders render the conversion script with the real label", () => {
   const html = renderToStaticMarkup(React.createElement(CheckoutSuccess, {
     verified: true,
     paymentProvider: "Paystack",
     orderReference: "RCH-261011-ABCD",
     purchase: { value: 87, currency: "GHS", transactionId: "payment-123" },
+  }));
+  assert.match(html, /id="google-ads-purchase-payment-123"/);
+  assert.match(html, /AW-18507081661\/03tJCICkopkdEL3P7vhE/);
+  assert.match(html, /"value":87/);
+  assert.match(html, /"currency":"GHS"/);
+  assert.match(html, /"transaction_id":"payment-123"/);
+});
+
+test("confirmed payments without paid-order purchase data do not render a conversion", () => {
+  const html = renderToStaticMarkup(React.createElement(CheckoutSuccess, {
+    verified: true,
+    paymentProvider: "Paystack",
+    orderReference: "RCH-261011-ABCD",
   }));
   assert.doesNotMatch(html, /<script|google-ads-purchase/);
 });

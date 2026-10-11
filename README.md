@@ -70,7 +70,7 @@ Order confirmations and shipped notifications are sent only when `RESEND_API_KEY
 
 The root layout loads the Google tag for `AW-18507081661` on all pages using `next/script` with `afterInteractive`. After deployment, use Google Ads' Test Installation to confirm the tag. This configures the Google Ads destination; a GA4 destination must be linked in Google or configured separately to enable Analytics reporting.
 
-Purchase conversion wiring is present on `/success`, but disabled while `GOOGLE_ADS_PURCHASE_SEND_TO` in `src/lib/google-ads.ts` is `AW-18507081661/YOUR_LABEL_HERE`. Replace the placeholder with the real Purchase conversion label and redeploy to enable it. A browser warning explains the missing label after a qualifying payment.
+Purchase conversions are enabled on `/success` with destination `AW-18507081661/03tJCICkopkdEL3P7vhE`, configured by `GOOGLE_ADS_PURCHASE_SEND_TO` in `src/lib/google-ads.ts`.
 
 Events require a server-verified payment and a paid order record. They use the provider's actual paid total (including shipping and discounts), GHS currency, and payment reference/session ID for Google's transaction deduplication. Opening `/success` without a verified payment never fires a purchase conversion. Test using a genuine checkout and Google Tag Assistant; merely visiting the page or receiving an HTTP 200 does not verify attribution or guarantee an immediate Google Ads status update.
 

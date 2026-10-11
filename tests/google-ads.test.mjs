@@ -7,7 +7,13 @@ const purchase = { value: 87, currency: "GHS", transactionId: "payment-123" };
 const testDestination = "AW-18507081661/test-label";
 
 test("placeholder destination never generates a conversion script", () => {
-  assert.equal(buildGoogleAdsPurchaseScript(purchase), null);
+  assert.equal(buildGoogleAdsPurchaseScript(purchase, "AW-18507081661/YOUR_LABEL_HERE"), null);
+});
+
+test("default destination uses the real Google Ads Purchase conversion label", () => {
+  const window = {};
+  runInNewContext(buildGoogleAdsPurchaseScript(purchase), { window });
+  assert.equal(window.dataLayer[0][2].send_to, "AW-18507081661/03tJCICkopkdEL3P7vhE");
 });
 
 test("conversion sends the actual value, currency, and stable transaction ID", () => {
