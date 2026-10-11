@@ -66,6 +66,12 @@ Keep `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, Sanity tokens, and `PAYSTACK_SECR
 
 Order confirmations and shipped notifications are sent only when `RESEND_API_KEY` and `ORDER_EMAIL_FROM` are configured. Verify the sender domain/address in Resend first. The webhook still records orders if email sending is not configured; shipping email status is shown in the admin notice.
 
+## Google Ads tag
+
+The root layout loads the Google tag for `AW-18507081661` on all pages using `next/script` with `afterInteractive`. After deployment, use Google Ads' Test Installation to confirm the tag. This configures the Google Ads destination; a GA4 destination must be linked in Google or configured separately to enable Analytics reporting.
+
+Purchase conversion events are not configured yet. They require the Google Ads Purchase conversion label and must be sent only after server-verified payment, with the actual order value, currency, and a unique transaction ID.
+
 ## Deployment
 
 Deploy the Next.js app to Vercel and set all required Sanity, admin, Paystack, and optional Resend environment variables there. Add `OPENAI_API_KEY` to enable admin photo drafting. Set `NEXT_PUBLIC_SITE_URL` to the production origin and configure `<your-site-origin>/api/paystack/webhook` in the Paystack Dashboard. Test checkout, callback, webhook, order/stock updates, fulfillment, and email flows before accepting live payments.

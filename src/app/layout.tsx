@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { getSiteUrl } from "@/lib/site-url";
 import SiteHeader from "@/components/site-header";
 import SupportChat from "@/components/support-chat";
+import GoogleTag from "@/components/GoogleTag";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <GoogleTag />
         <div className="announcement">Complimentary Ghana shipping on orders of GH₵100 or more</div>
         <nav className="social-topbar" aria-label="Follow 38 RICHES on social media">
           <span>FOLLOW 38 RICHES</span>
