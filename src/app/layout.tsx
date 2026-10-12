@@ -6,6 +6,7 @@ import SiteHeader from "@/components/site-header";
 import SupportChat from "@/components/support-chat";
 import GoogleTag from "@/components/GoogleTag";
 import MetaPixel from "@/components/MetaPixel";
+import AdSense from "@/components/AdSense";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export const metadata: Metadata = {
     images: ["/images/38-richies-embroidered.svg"],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
+  other: { "google-adsense-account": "ca-pub-3212823299590438" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -56,6 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <GoogleTag />
         <MetaPixel />
+        <AdSense />
         <div className="announcement">Complimentary Ghana shipping on orders of GH₵100 or more</div>
         <nav className="social-topbar" aria-label="Follow 38 RICHES on social media">
           <span>FOLLOW 38 RICHES</span>
