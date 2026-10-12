@@ -16,6 +16,7 @@ const componentRequire = (name) => {
   if (name === "next/link") return { default: ({ children, ...props }) => React.createElement("a", props, children) };
   if (name === "next/script") return { default: ({ children, ...props }) => React.createElement("script", props, children) };
   if (name === "@/lib/google-ads") return require("../src/lib/google-ads.ts");
+  if (name === "@/lib/meta-pixel") return require("../src/lib/meta-pixel.ts");
   if (name === "@/lib/cart-store") return { useCartStore: (selector) => selector({ clearCart() {} }) };
   return require(name);
 };
@@ -76,6 +77,9 @@ test("confirmed paid orders render the conversion script with the real label", (
   assert.match(html, /"value":87/);
   assert.match(html, /"currency":"GHS"/);
   assert.match(html, /"transaction_id":"payment-123"/);
+  assert.match(html, /id="meta-purchase-payment-123"/);
+  assert.match(html, /&quot;Purchase&quot;|"Purchase"|'Purchase'/);
+  assert.match(html, /purchase-payment-123/);
 });
 
 test("confirmed payments without paid-order purchase data do not render a conversion", () => {
@@ -95,5 +99,5 @@ test("unverified payments ignore purchase data", () => {
     purchase: { value: -1, currency: "", transactionId: "" },
   }));
   assert.match(html, /UNCONFIRMED/);
-  assert.doesNotMatch(html, /<script|google-ads-purchase/);
+  assert.doesNotMatch(html, /<script|google-ads-purchase|meta-purchase/);
 });

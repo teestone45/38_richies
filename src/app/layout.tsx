@@ -5,6 +5,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import SiteHeader from "@/components/site-header";
 import SupportChat from "@/components/support-chat";
 import GoogleTag from "@/components/GoogleTag";
+import MetaPixel from "@/components/MetaPixel";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <GoogleTag />
+        <MetaPixel />
         <div className="announcement">Complimentary Ghana shipping on orders of GH₵100 or more</div>
         <nav className="social-topbar" aria-label="Follow 38 RICHES on social media">
           <span>FOLLOW 38 RICHES</span>
