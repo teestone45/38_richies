@@ -7,6 +7,7 @@ import SupportChat from "@/components/support-chat";
 import GoogleTag from "@/components/GoogleTag";
 import MetaPixel from "@/components/MetaPixel";
 import AdSense from "@/components/AdSense";
+import AdUnit from "@/components/AdUnit";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -67,6 +68,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </nav>
         <SiteHeader />
         {children}
+        <div className="ad-slot page-shell">
+          <AdUnit />
+        </div>
         <SupportChat />
         <Link className="order-track-float" href="/track" aria-label="Track your order">
           <span className="order-track-float__icon" aria-hidden="true">↗</span>
