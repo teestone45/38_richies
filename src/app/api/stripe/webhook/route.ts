@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         ...(product?.dropName ?? catalogProduct?.dropName ? { dropName: product?.dropName ?? catalogProduct?.dropName } : {}),
       });
 
-      if (!product?.inventory) continue;
+      if (!product?.inventory?.length) continue;
       const quantities = inventoryByProduct.get(product._id)?.quantities ?? new Map<string, number>();
       quantities.set(size, (quantities.get(size) ?? 0) + quantity);
       inventoryByProduct.set(product._id, { product, quantities });

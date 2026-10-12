@@ -112,7 +112,7 @@ export async function recordPaystackOrder(transaction: PaystackTransaction) {
     if ((item.preOrder && !currentlyPreOrderAvailable) || (!item.preOrder && currentlyComingSoon)) inventoryIssue = true;
     orderItems.push({ productId: item.slug, title: product?.title ?? catalogProduct?.title ?? item.slug, size: item.size, color: item.color, quantity: item.quantity, unitAmount: item.unitAmount, ...(product?.dropName ?? catalogProduct?.dropName ? { dropName: product?.dropName ?? catalogProduct?.dropName } : {}), ...(item.preOrder ? { preOrder: true } : {}) });
 
-    if ((item.preOrder && currentlyPreOrderAvailable) || !product?.inventory) continue;
+    if ((item.preOrder && currentlyPreOrderAvailable) || !product?.inventory?.length) continue;
     const quantities = inventoryByProduct.get(product._id)?.quantities ?? new Map<string, number>();
     quantities.set(item.size, (quantities.get(item.size) ?? 0) + item.quantity);
     inventoryByProduct.set(product._id, { product, quantities });
