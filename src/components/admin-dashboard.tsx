@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { formatCurrency } from "@/lib/currency";
+import AdminAnalytics from "@/components/admin-analytics";
 
 type AdminProduct = {
   _id: string;
@@ -123,7 +124,7 @@ export default function AdminDashboard() {
   const [isResendingEmailCode, setIsResendingEmailCode] = useState(false);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [activeAdminView, setActiveAdminView] = useState<"catalog" | "coming-soon" | "orders">("catalog");
+  const [activeAdminView, setActiveAdminView] = useState<"catalog" | "coming-soon" | "orders" | "performance">("catalog");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -667,7 +668,10 @@ export default function AdminDashboard() {
         <button type="button" aria-pressed={activeAdminView === "catalog"} onClick={() => setActiveAdminView("catalog")}>Catalog <span>{products.length}</span></button>
         <button type="button" aria-pressed={activeAdminView === "coming-soon"} onClick={() => setActiveAdminView("coming-soon")}>Coming Soon <span>{comingSoonProducts.length}</span></button>
         <button type="button" aria-pressed={activeAdminView === "orders"} onClick={() => setActiveAdminView("orders")}>Orders <span>{orders.length}</span></button>
+        <button type="button" aria-pressed={activeAdminView === "performance"} onClick={() => setActiveAdminView("performance")}>Performance <span>GA4</span></button>
       </nav>
+
+      {activeAdminView === "performance" && <AdminAnalytics />}
 
       {activeAdminView === "catalog" && <>
       <section className="admin-section" aria-labelledby="new-product-title">

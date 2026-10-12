@@ -68,7 +68,18 @@ Order confirmations and shipped notifications are sent only when `RESEND_API_KEY
 
 ## Google Ads tag
 
-The root layout loads one Google tag on all pages using `next/script` with `afterInteractive`. The existing initialization configures both Google Ads `AW-18507081661` and GA4 `G-MTSJWE7Y7`, without another script loader. After deployment, use Google Ads' Test Installation and GA4 Realtime or DebugView to verify collection. GA4 reports are not yet connected to the Admin dashboard.
+The root layout loads one Google tag on all pages using `next/script` with `afterInteractive`. The existing initialization configures both Google Ads `AW-18507081661` and GA4 `G-MTSJWE7Y7`, without another script loader. After deployment, use Google Ads' Test Installation and GA4 Realtime or DebugView to verify collection.
+
+## Admin performance dashboard
+
+Admin → **Performance** shows GA4 visitors, sessions, page views, engagement, purchases, revenue, daily traffic, top pages, traffic sources, visitor actions, countries, and devices for 7, 28, or 90 days. Data is read server-side through the GA4 Data API by an admin-only route (`/api/admin/analytics`).
+
+Setup:
+
+1. In Google Cloud, enable the **Google Analytics Data API**.
+2. Create a service account and download a JSON key (never commit or share it).
+3. In GA4 Admin → Property access management, add the service account email as **Viewer** on property `558419828`.
+4. Add server-only Vercel environment variables: `GA4_PROPERTY_ID=558419828`, `GA4_CLIENT_EMAIL` (the `client_email` value), and `GA4_PRIVATE_KEY` (the `private_key` value; `\n` escapes are supported). Then redeploy.
 
 Purchase conversions are enabled on `/success` with destination `AW-18507081661/03tJCICkopkdEL3P7vhE`, configured by `GOOGLE_ADS_PURCHASE_SEND_TO` in `src/lib/google-ads.ts`.
 
