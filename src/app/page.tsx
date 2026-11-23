@@ -1,9 +1,9 @@
+import "./rack-home.css";
 import Link from "next/link";
 import Image from "next/image";
-import FeaturedProductHero from "@/components/featured-product-hero";
+import ClothingRack from "@/components/clothing-rack";
 import NewsletterSignup from "@/components/newsletter-signup";
 import ProductCollection from "@/components/product-collection";
-import StoreDashboard from "@/components/store-dashboard";
 import BrandFaq from "@/components/brand-faq";
 import StoreDisclosure from "@/components/store-disclosure";
 import { formatCurrency } from "@/lib/currency";
@@ -35,22 +35,13 @@ export default async function Home() {
   }).replace(/</g, "\\u003c");
 
   return (
-    <main>
+    <main className="rack-home">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
-      <section className="brand-snapshot page-shell" aria-labelledby="brand-snapshot-title">
-        {brandImage && <Image className="brand-snapshot__image" src={brandImage} alt="" fill priority unoptimized sizes="89vw" />}
-        <div className="brand-snapshot__content">
-          <p className="eyebrow">A GHANAIAN STREETWEAR LABEL</p>
-          <h2 id="brand-snapshot-title">38 RICHES.<br /><span>Built from vision.</span></h2>
-          <p className="brand-snapshot__lead">Premium oversized streetwear. Ghanaian roots. A point of view that&apos;s all our own.</p>
-          <p>38 RICHES is a Ghanaian streetwear brand offering premium oversized T-shirts, hoodies, jeans, and selected graphic pieces. Sizes and materials vary by design; check each product page for available options, including XL and 2XL on selected pieces. Selected tees use heavyweight 280 GSM cotton with original A3 DTF prints.</p>
-          <p>The 38 RICHES Fit Builder pairs an available top and bottom, shows the combined price, and adds both pieces to your bag together. Ghana delivery is free on orders of GH₵100 or more after discounts.</p>
-          <Link href="/fit-builder">Try the 38 RICHES Fit Builder <span aria-hidden="true">→</span></Link>
-        </div>
-      </section>
+      <ClothingRack products={products.filter((product) => !/accessor|cap|hat/i.test(product.category)).slice(0, 6).map(({ slug, title, description, category, priceCents }) => ({ slug, title, description, category, priceCents }))} />
+      <div className="rack-values page-shell" aria-label="Our approach"><span>GHANAIAN ROOTS. GLOBAL OUTLOOK.</span><span>SMALL BATCHES. BIG CHARACTER.</span><span>YOUR EVERYDAY, ELEVATED.</span></div>
       <section className="shop-section page-shell" id="shop">
         <div className="section-heading">
-          <div><p className="eyebrow">THE FIRST DROP / 001</p><h2>THE ROTATION</h2></div>
+          <div><p className="eyebrow">THE COLLECTION / 001</p><h2>Your next everyday.</h2></div>
           <div className="section-heading__aside">
             <p className="section-heading__note">Small run. Heavy feel.<br />Find your uniform.</p>
             {remainingUnits !== null && <p className="rotation-stock">{remainingUnits} TRACKED UNITS AVAILABLE</p>}
@@ -80,8 +71,19 @@ export default async function Home() {
           </div>
         </section>
       )}
-      <StoreDashboard products={products} />
-      <FeaturedProductHero products={products} />
+      <section className="rack-lifestyle page-shell" aria-labelledby="lifestyle-title">
+        <div className="rack-lifestyle__photo">
+          <Image src={brandImage} alt="Street-style portrait in a relaxed city setting" fill unoptimized sizes="(max-width: 700px) 92vw, 55vw" />
+          <span>38 RICHES — OUT IN THE WORLD</span>
+        </div>
+        <div className="rack-lifestyle__copy">
+          <p className="eyebrow">NOT JUST WHAT YOU WEAR.</p>
+          <h2 id="lifestyle-title">How you<br />show up.</h2>
+          <p>Ghanaian roots. A point of view that&apos;s all our own. Considered streetwear for the ones building their own lane.</p>
+          <Link href="/journal">Inside our world <span aria-hidden="true">↗</span></Link>
+          <small>MOVE DIFFERENT. / 38 RICHES</small>
+        </div>
+      </section>
 
       <StoreDisclosure title="About 38 RICHES & FAQs" description="Brand story, sizing, shipping, Fit Builder, and drop updates">
       <BrandFaq />
@@ -176,13 +178,13 @@ export default async function Home() {
       </section>
       <p className="home-journal-link page-shell"><Link href="/journal">Explore the drop journal <span aria-hidden="true">↗</span></Link></p>
       </StoreDisclosure>
-      <footer className="site-footer">
+      <footer className="site-footer" id="contact">
         <Link className="wordmark" href="/" aria-label="38 RICHES home"><Image src="/images/38-richies-embroidered.svg" alt="38 RICHIES" width={54} height={42} /></Link>
         <p>© 2026 38 RICHES. MOVE DIFFERENT.</p>
         <Link href="/track">TRACK ORDER</Link>
         <Link href="/admin">ADMIN</Link>
         <div className="site-footer__socials">
-          <a href="mailto:hello@38riches.com">CONTACT ↗</a>
+          <a href="mailto:38richiesclothing@gmail.com">CONTACT ↗</a>
           <a href="https://www.tiktok.com/@38richies0?is_from_webapp=1&amp;sender_device=pc" target="_blank" rel="noreferrer">TIKTOK ↗</a>
           <a href="https://www.instagram.com/38r_ichies/" target="_blank" rel="noreferrer">INSTAGRAM ↗</a>
         </div>
