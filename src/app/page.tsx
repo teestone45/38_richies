@@ -37,7 +37,7 @@ export default async function Home() {
   return (
     <main className="rack-home">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
-      <ClothingRack products={products.filter((product) => !/accessor|cap|hat/i.test(product.category)).slice(0, 6).map(({ slug, title, description, category, priceCents }) => ({ slug, title, description, category, priceCents }))} />
+      <ClothingRack products={products.filter((product) => !/accessor|cap|hat/i.test(product.category)).slice(0, 6).map(({ slug, title, description, category, priceCents, image }) => ({ slug, title, description, category, priceCents, image }))} />
       <div className="rack-values page-shell" aria-label="Our approach"><span>GHANAIAN ROOTS. GLOBAL OUTLOOK.</span><span>SMALL BATCHES. BIG CHARACTER.</span><span>YOUR EVERYDAY, ELEVATED.</span></div>
       <section className="shop-section page-shell" id="shop">
         <div className="section-heading">
